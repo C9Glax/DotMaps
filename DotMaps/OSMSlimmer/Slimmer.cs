@@ -19,6 +19,10 @@ namespace DotMaps.Utils
             Graph mapGraph = ConvertXMLtoGraph(path, addressList);
             Console.WriteLine("Done. {0} Nodes", mapGraph.nodes.Count);
 
+            Console.WriteLine("Removing unnecessary Nodes...");
+            RemoveNodesWithoutConnection(ref mapGraph);
+            Console.WriteLine("Done. {0} Nodes", mapGraph.nodes.Count);
+
             /*Console.WriteLine("Importing Addresses...");
             Graph.Node[] nodes = new Graph.Node[mapGraph.nodes.Count];
             mapGraph.nodes.Values.CopyTo(nodes, 0);
@@ -36,7 +40,7 @@ namespace DotMaps.Utils
             Graph graph = new Graph();
 
             Hashtable speeds = new Hashtable();
-            foreach (string speedString in System.IO.File.ReadAllLines("speeds.txt"))
+            foreach (string speedString in File.ReadAllLines("speeds.txt"))
                 speeds.Add(speedString.Split(',')[0], Convert.ToSingle(speedString.Split(',')[1]));
 
             XmlReaderSettings settings = new XmlReaderSettings();
@@ -52,9 +56,9 @@ namespace DotMaps.Utils
 
             while (reader.Read())
             {
-                if(reader.Depth == 1)
+                if (reader.Depth == 1)
                 {
-                    if(state == READING)
+                    if (state == READING)
                     {
                         state = DONE;
                         UInt64[] nodeIds = wayNodeIds.ToArray();
@@ -66,7 +70,8 @@ namespace DotMaps.Utils
                             try
                             {
                                 postcode = Convert.ToUInt16((string)tags["addr:postcode"]);
-                            }catch(FormatException)
+                            }
+                            catch (FormatException)
                             {
                                 Console.WriteLine("Format Exception postcode: {0}", (string)tags["addr:postcode"]);
                             }
@@ -96,7 +101,15 @@ namespace DotMaps.Utils
                                     }
                                     catch (FormatException)
                                     {
-                                        Console.WriteLine("Warn: unexpected value for maxspeed: {0}", (string)tags["maxspeed"]);
+                                        switch ((string)tags["maxspeed"])
+                                        {
+                                            case "none":
+                                                speed = 150;
+                                                break;
+                                            default:
+                                                Console.WriteLine("Warn: unexpected value for maxspeed: {0}", (string)tags["maxspeed"]);
+                                                break;
+                                        }
                                     }
                                 }
                                 float timeNeeded = distance / speed;
@@ -118,7 +131,7 @@ namespace DotMaps.Utils
                         }
                     }
                     parent = reader.Name;
-                    if(reader.Name == "node" && reader.NodeType != XmlNodeType.EndElement)
+                    if (reader.Name == "node" && reader.NodeType != XmlNodeType.EndElement)
                     {
                         UInt64 nodeId = Convert.ToUInt64(reader.GetAttribute("id"));
                         float lat = Convert.ToSingle(reader.GetAttribute("lat").Replace('.', ','));
@@ -126,9 +139,10 @@ namespace DotMaps.Utils
                         Graph.Node newNode = new Graph.Node(nodeId, lat, lon);
                         graph.nodes.Add(nodeId, newNode);
                     }
-                }else if(reader.Depth == 2 && parent == "way")
+                }
+                else if (reader.Depth == 2 && parent == "way")
                 {
-                    if(state == DONE)
+                    if (state == DONE)
                     {
                         wayNodeIds = new List<UInt64>();
                         tags = new Hashtable();
@@ -141,8 +155,6 @@ namespace DotMaps.Utils
                 }
             }
             reader.Close();
-
-            RemoveNodesWithoutConnection(ref graph);
 
             return graph;
         }
@@ -213,11 +225,11 @@ namespace DotMaps.Utils
 
         private static void WriteToFile(Graph mapGraph, Address[] addressList, string path)
         {
-            using(StreamWriter writer = new StreamWriter(path))
+            using (StreamWriter writer = new StreamWriter(path))
             {
                 writer.WriteLine("<slim>");
                 writer.WriteLine("  <nodes>");
-                foreach(Graph.Node node in mapGraph.nodes.Values)
+                foreach (Graph.Node node in mapGraph.nodes.Values)
                 {
                     writer.WriteLine("    <node lat=\"" + node.lat.ToString() + "\" lon=\"" + node.lon.ToString() + "\" id=\"" + node.id + "\">");
                     if (node.GetConnections().Length < 1)
@@ -225,7 +237,7 @@ namespace DotMaps.Utils
                     else
                     {
                         writer.WriteLine("      <connections>");
-                        foreach(Graph.Connection connection in node.GetConnections())
+                        foreach (Graph.Connection connection in node.GetConnections())
                         {
                             writer.WriteLine("        <connection id=\"" + connection.neighbor.id + "\" distance=\"" + connection.distance + "\" time=\"" + connection.distance + "\" type=\"" + connection.type + "\" />");
                         }
@@ -235,7 +247,7 @@ namespace DotMaps.Utils
                 }
                 writer.WriteLine("  </nodes>");
                 writer.WriteLine("  <addresses>");
-                foreach(Address address in addressList)
+                foreach (Address address in addressList)
                 {
                     writer.WriteLine("    <address countrycode=\"" + address.country + "\" cityname=\"" + address.cityname + "\" postcode=\"" + address.postcode.ToString() + "\" streetname=\"" + address.steetname + "\" housenumber=\"" + address.housenumber + "\" lat=\"" + address.lat + "\" lon=\"" + address.lon + "\" />");
                 }
