@@ -9,4 +9,10 @@
     <ProjectReference Include="..\Datastructures\Datastructures.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="speeds.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

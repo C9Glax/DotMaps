@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Threading.Tasks;
 using DotMaps.Datastructures;
 using System.Xml;
 using System.Collections.Generic;
 using System.Collections;
+using System.IO;
 
 namespace DotMaps.Utils
 {
@@ -11,28 +13,140 @@ namespace DotMaps.Utils
 
         public Slimmer(string path)
         {
-            XmlDocument map = new XmlDocument();
-            Console.WriteLine("Loading .osm XML-Document.");
-            map.Load(path);
-            Console.WriteLine("Done.");
-            Graph mapGraph = new Graph();
             List<Address> addressList = new List<Address>();
 
-            Console.WriteLine("Importing Graph...");
-            this.ReadXMLIntoGraph(map, ref mapGraph, ref addressList);
-            Console.WriteLine("Done.");
+            Console.WriteLine("Importing Nodes...");
+            Graph mapGraph = ConvertXMLtoGraph(path, addressList);
+            Console.WriteLine("Done. {0} Nodes", mapGraph.nodes.Count);
 
-            Console.WriteLine("Importing Addresses...");
+            /*Console.WriteLine("Importing Addresses...");
             Graph.Node[] nodes = new Graph.Node[mapGraph.nodes.Count];
             mapGraph.nodes.Values.CopyTo(nodes, 0);
             foreach (Address address in addressList)
                 this.CalculateAssosciatedNode(address, nodes);
-            Console.WriteLine("Done.");
+            Console.WriteLine("Done.");*/
 
             Console.WriteLine("Writing new file.");
             string newPath = path.Substring(0, path.Length - 4) + "_slim.osm";
             WriteToFile(mapGraph, addressList.ToArray(), newPath);
         }
+
+        public Graph ConvertXMLtoGraph(string path, List<Address> addresslist)
+        {
+            Graph graph = new Graph();
+
+            Hashtable speeds = new Hashtable();
+            foreach (string speedString in System.IO.File.ReadAllLines("speeds.txt"))
+                speeds.Add(speedString.Split(',')[0], Convert.ToSingle(speedString.Split(',')[1]));
+
+            XmlReaderSettings settings = new XmlReaderSettings();
+            settings.IgnoreWhitespace = true;
+            XmlReader reader = XmlReader.Create(path, settings);
+
+            string parent = "";
+            const byte READING = 1;
+            const byte DONE = 0;
+            byte state = DONE;
+            List<UInt64> wayNodeIds = new List<UInt64>();
+            Hashtable tags = new Hashtable();
+
+            while (reader.Read())
+            {
+                if(reader.Depth == 1)
+                {
+                    if(state == READING)
+                    {
+                        state = DONE;
+                        UInt64[] nodeIds = wayNodeIds.ToArray();
+
+                        if (tags.ContainsKey("building") && tags.ContainsKey("addr:country") && tags.ContainsKey("addr:postcode") && tags.ContainsKey("addr:street"))
+                        {
+                            string county = (string)tags["addr:country"];
+                            UInt16 postcode = 0;
+                            try
+                            {
+                                postcode = Convert.ToUInt16((string)tags["addr:postcode"]);
+                            }catch(FormatException)
+                            {
+                                Console.WriteLine("Format Exception postcode: {0}", (string)tags["addr:postcode"]);
+                            }
+                            string city = tags.ContainsKey("addr:city") ? (string)tags["addr:city"] : "";
+                            string street = (string)tags["addr:street"];
+                            string housenumber = tags.ContainsKey("addr:housenumber") ? (string)tags["addr:housenumber"] : "0";
+
+                            Graph.Node buildingNode = (Graph.Node)graph.nodes[nodeIds[0]];
+
+                            Address newAddress = new Address(county, postcode, city, street, housenumber, buildingNode.lat, buildingNode.lon);
+                            addresslist.Add(newAddress);
+                        }
+                        else if (tags.ContainsKey("highway"))
+                        {
+                            for (int i = 1; i < nodeIds.Length; i++)
+                            {
+                                Graph.Node destination = (Graph.Node)graph.nodes[nodeIds[i]];
+                                Graph.Node start = (Graph.Node)graph.nodes[nodeIds[i - 1]];
+
+                                float distance = CalculateDistanceBetween(destination, start);
+                                int speed = speeds.ContainsKey(tags["highway"].ToString()) ? Convert.ToInt32(speeds[tags["highway"].ToString()]) : 1;
+                                if (tags.ContainsKey("maxspeed"))
+                                {
+                                    try
+                                    {
+                                        speed = tags.ContainsKey("maxspeed") ? Convert.ToInt32((string)tags["maxspeed"]) : speed;
+                                    }
+                                    catch (FormatException)
+                                    {
+                                        Console.WriteLine("Warn: unexpected value for maxspeed: {0}", (string)tags["maxspeed"]);
+                                    }
+                                }
+                                float timeNeeded = distance / speed;
+                                string type = (string)tags["highway"];
+
+                                Graph.Connection to = new Graph.Connection(distance, timeNeeded, start, type);
+                                destination.AddConnection(to);
+                                if (!tags.ContainsKey("oneway") || (string)tags["oneway"] != "yes")
+                                {
+                                    Graph.Connection from = new Graph.Connection(distance, timeNeeded, destination, type);
+                                    start.AddConnection(from);
+                                }
+                            }
+
+                            if (tags.ContainsKey("name"))
+                            {
+                                //TODO streetname
+                            }
+                        }
+                    }
+                    parent = reader.Name;
+                    if(reader.Name == "node" && reader.NodeType != XmlNodeType.EndElement)
+                    {
+                        UInt64 nodeId = Convert.ToUInt64(reader.GetAttribute("id"));
+                        float lat = Convert.ToSingle(reader.GetAttribute("lat").Replace('.', ','));
+                        float lon = Convert.ToSingle(reader.GetAttribute("lon").Replace('.', ','));
+                        Graph.Node newNode = new Graph.Node(nodeId, lat, lon);
+                        graph.nodes.Add(nodeId, newNode);
+                    }
+                }else if(reader.Depth == 2 && parent == "way")
+                {
+                    if(state == DONE)
+                    {
+                        wayNodeIds = new List<UInt64>();
+                        tags = new Hashtable();
+                        state = READING;
+                    }
+                    if (reader.Name == "nd")
+                        wayNodeIds.Add(Convert.ToUInt64(reader.GetAttribute("ref")));
+                    else if (reader.Name == "tag")
+                        tags.Add(reader.GetAttribute("k"), reader.GetAttribute("v"));
+                }
+            }
+            reader.Close();
+
+            RemoveNodesWithoutConnection(ref graph);
+
+            return graph;
+        }
+
         public void CalculateAssosciatedNode(Address address, Graph.Node[] nodes)
         {
             float shortestDistance = float.MaxValue;
@@ -50,109 +164,6 @@ namespace DotMaps.Utils
             }
 
             address.assosciatedNode = shortestNode.id;
-        }
-
-        private Graph ReadXMLIntoGraph(XmlDocument xml, ref Graph graph, ref List<Address> addresslist)
-        {
-            XmlNode rootNode = xml.ChildNodes[1];
-            foreach (XmlNode xmlnode in rootNode.ChildNodes)
-            {
-                switch (xmlnode.Name)
-                {
-                    case "node":
-                        Graph.Node newNode = ImportNode(xmlnode);
-                        graph.nodes.Add(newNode.id, newNode);
-                        break;
-                    case "way":
-                        AddConnections(xmlnode, ref graph, ref addresslist);
-                        break;
-                    default:
-                        Console.WriteLine("Not needed type: {0}", xmlnode.Name);
-                        break;
-                }
-            }
-
-            RemoveNodesWithoutConnection(ref graph);
-            return graph;
-        }
-
-        private static Graph.Node ImportNode(XmlNode node)
-        {
-            UInt32 nodeId = Convert.ToUInt32(node.Attributes.GetNamedItem("id").Value);
-            float lat = Convert.ToSingle(node.Attributes.GetNamedItem("lat").Value.Replace('.', ','));
-            float lon = Convert.ToSingle(node.Attributes.GetNamedItem("lon").Value.Replace('.', ','));
-            return new Graph.Node(nodeId, lat, lon);
-        }
-
-        private static void AddConnections(XmlNode way, ref Graph graph, ref List<Address> addresslist)
-        {
-            List<UInt64> wayNodeIds = new List<UInt64>();
-            Hashtable tags = new Hashtable();
-            Hashtable speeds = new Hashtable();
-            foreach (string speedString in System.IO.File.ReadAllLines("speeds.txt"))
-                speeds.Add(speedString.Split(',')[0], Convert.ToSingle(speedString.Split(',')[1]));
-
-            foreach (XmlNode attribute in way.ChildNodes)
-            {
-                if (attribute.Name == "nd")
-                    wayNodeIds.Add(Convert.ToUInt64(attribute.Attributes.GetNamedItem("ref").Value));
-                else if (attribute.Name == "tag")
-                    tags.Add(attribute.Attributes.GetNamedItem("k").Value, attribute.Attributes.GetNamedItem("v").Value);
-            }
-            UInt64[] nodeIds = wayNodeIds.ToArray();
-
-            if (tags.ContainsKey("building") && tags.ContainsKey("addr:country") && tags.ContainsKey("addr:postcode") && tags.ContainsKey("addr:street"))
-            {
-                string county = (string)tags["addr:country"];
-                UInt16 postcode = Convert.ToUInt16((string)tags["addr:postcode"]);
-                string city = tags.ContainsKey("addr:city") ? (string)tags["addr:city"] : "";
-                string street = (string)tags["addr:street"];
-                string housenumber = tags.ContainsKey("addr:housenumber") ? (string)tags["addr:housenumber"] : "0";
-
-                Graph.Node buildingNode = (Graph.Node)graph.nodes[nodeIds[0]];
-
-                Address newAddress = new Address(county, postcode, city, street, housenumber, buildingNode.lat, buildingNode.lon);
-                addresslist.Add(newAddress);
-            }
-            else if (tags.ContainsKey("highway"))
-            {
-                for (int i = 1; i < nodeIds.Length; i++)
-                {
-                    Graph.Node destination = (Graph.Node)graph.nodes[nodeIds[i]];
-                    Graph.Node start = (Graph.Node)graph.nodes[nodeIds[i - 1]];
-
-                    float distance = CalculateDistanceBetween(destination, start);
-                    int speed = speeds.ContainsKey(tags["highway"].ToString()) ? Convert.ToInt32(speeds[tags["highway"].ToString()]) : 1;
-                    if (tags.ContainsKey("maxspeed"))
-                    {
-                        try
-                        {
-                            speed = tags.ContainsKey("maxspeed") ? Convert.ToInt32((string)tags["maxspeed"]) : speed;
-                        }
-                        catch (FormatException)
-                        {
-                            Console.WriteLine("Warn: unexpected value for maxspeed: {0}", (string)tags["maxspeed"]);
-                        }
-                    }
-                    float timeNeeded = distance / speed;
-                    string type = (string)tags["highway"];
-
-                    Graph.Connection to = new Graph.Connection(distance, timeNeeded, start, type);
-                    destination.AddConnection(to);
-                    if (!tags.ContainsKey("oneway") || (string)tags["oneway"] != "yes")
-                    {
-                        Graph.Connection from = new Graph.Connection(distance, timeNeeded, destination, type);
-                        start.AddConnection(from);
-                    }
-                }
-
-                if (tags.ContainsKey("name"))
-                {
-                    //TODO
-                }
-            }
-            else
-                return;
         }
 
         private static float CalculateDistanceBetweenCoordinates(float lat1, float lon1, float lat2, float lon2)
@@ -200,126 +211,38 @@ namespace DotMaps.Utils
                     graph.nodes.Remove(node.id);
         }
 
-        private static void ConvertAddressesToXML(ref XmlDocument xml, ref XmlNode addressRoot, Address[] addresses)
-        {
-            foreach (Address address in addresses)
-            {
-                XmlNode country = null;
-                foreach (XmlNode node in xml.GetElementsByTagName("country"))
-                    if (node.Attributes.GetNamedItem("code").Value == address.country)
-                        country = node;
-                if (country == null)
-                {
-                    country = xml.CreateElement("country");
-                    addressRoot.AppendChild(country);
-                    XmlAttribute code = xml.CreateAttribute("code");
-                    code.Value = address.country;
-                    country.Attributes.Append(code);
-                }
-
-                XmlNode city = null;
-                foreach (XmlNode node in xml.GetElementsByTagName("city"))
-                    if (node.Attributes.GetNamedItem("postcode").Value == address.postcode.ToString())
-                        city = node;
-                if (city == null)
-                {
-                    city = xml.CreateElement("city");
-                    country.AppendChild(city);
-                    XmlAttribute name = xml.CreateAttribute("name");
-                    name.Value = address.cityname;
-                    city.Attributes.Append(name);
-                    XmlAttribute postcode = xml.CreateAttribute("postcode");
-                    postcode.Value = address.postcode.ToString();
-                    city.Attributes.Append(postcode);
-                }
-
-                XmlNode street = null;
-                foreach (XmlNode node in xml.GetElementsByTagName("street"))
-                    if (node.Attributes.GetNamedItem("name").Value == address.steetname)
-                        street = node;
-                if (street == null)
-                {
-                    street = xml.CreateElement("street");
-                    city.AppendChild(street);
-                    XmlAttribute name = xml.CreateAttribute("name");
-                    name.Value = address.steetname;
-                    street.Attributes.Append(name);
-                }
-
-                XmlNode housenumber = xml.CreateElement("house");
-
-                XmlAttribute number = xml.CreateAttribute("number");
-                number.Value = address.housenumber.ToString();
-                housenumber.Attributes.Append(number);
-                XmlAttribute lat = xml.CreateAttribute("lat");
-                lat.Value = address.lat.ToString();
-                housenumber.Attributes.Append(lat);
-                XmlAttribute lon = xml.CreateAttribute("lon");
-                lon.Value = address.lon.ToString();
-                housenumber.Attributes.Append(lon);
-                XmlAttribute nodeId = xml.CreateAttribute("node");
-                nodeId.Value = address.assosciatedNode.ToString();
-                housenumber.Attributes.Append(nodeId);
-
-                street.AppendChild(housenumber);
-            }
-        }
-
-        private static void ConvertGraphToXML(ref XmlDocument xml, ref XmlNode nodeRoot, Graph graph)
-        {
-
-            foreach (Graph.Node graphNode in graph.nodes.Values)
-            {
-                XmlNode newXmlNode = xml.CreateElement("node");
-
-                XmlAttribute lat = xml.CreateAttribute("lat");
-                lat.Value = graphNode.lat.ToString();
-                newXmlNode.Attributes.Append(lat);
-                XmlAttribute lon = xml.CreateAttribute("lon");
-                lon.Value = graphNode.lon.ToString();
-                newXmlNode.Attributes.Append(lon);
-                XmlAttribute id = xml.CreateAttribute("id");
-                id.Value = graphNode.id.ToString();
-                newXmlNode.Attributes.Append(id);
-
-                XmlNode connections = xml.CreateElement("connections");
-                newXmlNode.AppendChild(connections);
-                foreach (Graph.Connection connection in graphNode.GetConnections())
-                {
-                    XmlNode newXmlConnection = xml.CreateElement("connection");
-
-                    XmlAttribute connectionNodeId = xml.CreateAttribute("id");
-                    connectionNodeId.Value = connection.neighbor.id.ToString();
-                    newXmlConnection.Attributes.Append(connectionNodeId);
-                    XmlAttribute distance = xml.CreateAttribute("distance");
-                    distance.Value = connection.distance.ToString();
-                    newXmlConnection.Attributes.Append(distance);
-                    XmlAttribute timeNeeded = xml.CreateAttribute("time");
-                    timeNeeded.Value = connection.timeNeeded.ToString();
-                    newXmlConnection.Attributes.Append(timeNeeded);
-                    XmlAttribute type = xml.CreateAttribute("type");
-                    type.Value = connection.type;
-                    newXmlConnection.Attributes.Append(type);
-
-                    connections.AppendChild(newXmlConnection);
-                }
-
-                nodeRoot.AppendChild(newXmlNode);
-            }
-        }
         private static void WriteToFile(Graph mapGraph, Address[] addressList, string path)
         {
-            XmlDocument slimmed = new XmlDocument();
-            XmlNode root = slimmed.CreateElement("slim");
-            slimmed.AppendChild(root);
-            XmlNode nodes = slimmed.CreateElement("nodes");
-            root.AppendChild(nodes);
-            XmlNode addresses = slimmed.CreateElement("addresses");
-            root.AppendChild(addresses);
-
-            ConvertGraphToXML(ref slimmed, ref nodes, mapGraph);
-            ConvertAddressesToXML(ref slimmed, ref addresses, addressList);
-            slimmed.Save(path);
+            using(StreamWriter writer = new StreamWriter(path))
+            {
+                writer.WriteLine("<slim>");
+                writer.WriteLine("  <nodes>");
+                foreach(Graph.Node node in mapGraph.nodes.Values)
+                {
+                    writer.WriteLine("    <node lat=\"" + node.lat.ToString() + "\" lon=\"" + node.lon.ToString() + "\" id=\"" + node.id + "\">");
+                    if (node.GetConnections().Length < 1)
+                        writer.WriteLine("      <connections />");
+                    else
+                    {
+                        writer.WriteLine("      <connections>");
+                        foreach(Graph.Connection connection in node.GetConnections())
+                        {
+                            writer.WriteLine("        <connection id=\"" + connection.neighbor.id + "\" distance=\"" + connection.distance + "\" time=\"" + connection.distance + "\" type=\"" + connection.type + "\" />");
+                        }
+                        writer.WriteLine("      </connections>");
+                    }
+                    writer.WriteLine("    </node>");
+                }
+                writer.WriteLine("  </nodes>");
+                writer.WriteLine("  <addresses>");
+                foreach(Address address in addressList)
+                {
+                    writer.WriteLine("    <address countrycode=\"" + address.country + "\" cityname=\"" + address.cityname + "\" postcode=\"" + address.postcode.ToString() + "\" streetname=\"" + address.steetname + "\" housenumber=\"" + address.housenumber + "\" lat=\"" + address.lat + "\" lon=\"" + address.lon + "\" />");
+                }
+                writer.WriteLine("  </addresses>");
+                writer.WriteLine("</slim>");
+                writer.Close();
+            }
         }
 
         static void Main(string[] args)
