@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Xml;
 using DotMaps.Datastructures;
 
@@ -7,78 +8,68 @@ namespace DotMaps.Utils
     public class Loader
     {
 
-        public static Graph LoadXMLGraph(string path)
+        public static void Main(string[] args)
         {
-            XmlDocument xmlDoc = new XmlDocument();
-            xmlDoc.Load(@path);
-            XmlNode root = xmlDoc.GetElementsByTagName("nodes")[0];
-
             Graph graph = new Graph();
+            List<Address> addresses = new List<Address>();
+            LoadXML(ref graph, ref addresses, @"D:\Jann\Downloads\koeln_slim.osm");
+        }
 
-            foreach (XmlNode xmlNode in root.ChildNodes)
+        public static void LoadXML(ref Graph graph, ref List<Address> addresses, string path)
+        {
+            XmlReaderSettings settings = new XmlReaderSettings();
+            settings.IgnoreWhitespace = true;
+            XmlReader reader = XmlReader.Create(path, settings);
+
+
+            while (reader.Read())
             {
-                UInt32 nodeId = Convert.ToUInt32(xmlNode.Attributes.GetNamedItem("id").Value);
-                float lat = Convert.ToSingle(xmlNode.Attributes.GetNamedItem("lat").Value);
-                float lon = Convert.ToSingle(xmlNode.Attributes.GetNamedItem("lon").Value);
-                Graph.Node newNode = new Graph.Node(nodeId, lat, lon);
-                graph.nodes.Add(nodeId, newNode);
+                if (reader.NodeType != XmlNodeType.EndElement && reader.Name == "node")
+                {
+                    UInt64 nodeId = Convert.ToUInt64(reader.GetAttribute("id"));
+                    float lat = Convert.ToSingle(reader.GetAttribute("lat").Replace('.', ','));
+                    float lon = Convert.ToSingle(reader.GetAttribute("lon").Replace('.', ','));
+                    Graph.Node newNode = new Graph.Node(nodeId, lat, lon);
+                    graph.nodes.Add(nodeId, newNode);
+                }
+                else if (reader.NodeType != XmlNodeType.EndElement && reader.Name == "address")
+                {
+                    string countrycode = reader.GetAttribute("countrycode");
+                    string cityname = reader.GetAttribute("cityname");
+                    UInt16 postcode = Convert.ToUInt16(reader.GetAttribute("postcode"));
+                    string streetname = reader.GetAttribute("streetname");
+                    string housenumber = reader.GetAttribute("housenumber");
+                    float lat = Convert.ToSingle(reader.GetAttribute("lat"));
+                    float lon = Convert.ToSingle(reader.GetAttribute("lon"));
+                    addresses.Add(new Address(countrycode, postcode, cityname, streetname, housenumber, lat, lon));
+                }
             }
 
-            foreach (XmlNode xmlNode in root.ChildNodes)
+            reader.Close();
+            reader = XmlReader.Create(path, settings);
+
+            Graph.Node currentNode = null;
+            while (reader.Read())
             {
-                UInt64 nodeId = Convert.ToUInt64(xmlNode.Attributes.GetNamedItem("id").Value);
-                Graph.Node currentNode = (Graph.Node)graph.nodes[nodeId];
-                foreach (XmlNode xmlConnection in xmlNode.FirstChild.ChildNodes)
+                if (reader.NodeType != XmlNodeType.EndElement && reader.Name == "node")
                 {
-                    double distance = Convert.ToDouble(xmlConnection.Attributes.GetNamedItem("distance").Value);
-                    float time = Convert.ToSingle(xmlConnection.Attributes.GetNamedItem("time").Value);
-                    string type = xmlConnection.Attributes.GetNamedItem("type").Value;
+                    UInt64 nodeId = Convert.ToUInt64(reader.GetAttribute("id"));
+                    currentNode = (Graph.Node)graph.nodes[nodeId];
+                }
+                else if (reader.NodeType != XmlNodeType.EndElement && reader.Name == "connection")
+                {
+                    double distance = Convert.ToDouble(reader.GetAttribute("distance"));
+                    float timeNeeded = Convert.ToSingle(reader.GetAttribute("time"));
+                    string type = reader.GetAttribute("type");
 
-                    UInt64 id = Convert.ToUInt64(xmlConnection.Attributes.GetNamedItem("id").Value);
-                    Graph.Node neighbor = (Graph.Node)graph.nodes[id];
+                    UInt64 nodeId = Convert.ToUInt64(reader.GetAttribute("id"));
+                    Graph.Node neighbor = (Graph.Node)graph.nodes[nodeId];
 
-                    Graph.Connection newConnection = new Graph.Connection(distance, time, neighbor, type);
-
+                    Graph.Connection newConnection = new Graph.Connection(distance, timeNeeded, neighbor, type);
                     currentNode.AddConnection(newConnection);
                 }
             }
-
-            return graph;
-        }
-
-        public static Address[] LoadXMLAddresses(string path)
-        {
-            XmlDocument xmlDoc = new XmlDocument();
-            xmlDoc.Load(@path);
-            XmlNode root = xmlDoc.GetElementsByTagName("addresses")[0];
-
-            System.Collections.Generic.List<Address> addresses = new System.Collections.Generic.List<Address>();
-
-            foreach (XmlNode country in root.ChildNodes)
-            {
-                string countrycode = country.Attributes.GetNamedItem("code").Value;
-                foreach (XmlNode city in country.ChildNodes)
-                {
-                    string cityname = city.Attributes.GetNamedItem("name").Value;
-                    ushort postcode = Convert.ToUInt16(city.Attributes.GetNamedItem("postcode").Value);
-                    foreach (XmlNode street in city.ChildNodes)
-                    {
-                        string streetname = street.Attributes.GetNamedItem("name").Value;
-                        foreach (XmlNode house in street.ChildNodes)
-                        {
-                            string housenumber = house.Attributes.GetNamedItem("number").Value;
-                            float lat = Convert.ToSingle(house.Attributes.GetNamedItem("lat").Value);
-                            float lon = Convert.ToSingle(house.Attributes.GetNamedItem("lon").Value);
-                            UInt32 node = Convert.ToUInt32(house.Attributes.GetNamedItem("node").Value);
-
-                            Address newAddress = new Address(countrycode, postcode, cityname, streetname, housenumber, lat, lon, node);
-                            addresses.Add(newAddress);
-                        }
-                    }
-                }
-            }
-
-            return addresses.ToArray();
+            reader.Close();
         }
     }
 }
