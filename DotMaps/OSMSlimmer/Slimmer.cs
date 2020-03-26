@@ -19,6 +19,10 @@ namespace DotMaps.Utils
             Graph mapGraph = ConvertXMLtoGraph(path, addressList);
             Console.WriteLine("Done. {0} Nodes", mapGraph.nodes.Count);
 
+            Console.WriteLine("Removing unnecessary Nodes...");
+            RemoveNodesWithoutConnection(ref mapGraph);
+            Console.WriteLine("Done. {0} Nodes", mapGraph.nodes.Count);
+
             /*Console.WriteLine("Importing Addresses...");
             Graph.Node[] nodes = new Graph.Node[mapGraph.nodes.Count];
             mapGraph.nodes.Values.CopyTo(nodes, 0);
@@ -36,7 +40,7 @@ namespace DotMaps.Utils
             Graph graph = new Graph();
 
             Hashtable speeds = new Hashtable();
-            foreach (string speedString in System.IO.File.ReadAllLines("speeds.txt"))
+            foreach (string speedString in File.ReadAllLines("speeds.txt"))
                 speeds.Add(speedString.Split(',')[0], Convert.ToSingle(speedString.Split(',')[1]));
 
             XmlReaderSettings settings = new XmlReaderSettings();
@@ -96,7 +100,15 @@ namespace DotMaps.Utils
                                     }
                                     catch (FormatException)
                                     {
-                                        Console.WriteLine("Warn: unexpected value for maxspeed: {0}", (string)tags["maxspeed"]);
+                                        switch ((string)tags["maxspeed"])
+                                        {
+                                            case "none":
+                                                speed = 150;
+                                                break;
+                                            default:
+                                                Console.WriteLine("Warn: unexpected value for maxspeed: {0}", (string)tags["maxspeed"]);
+                                                break;
+                                        }
                                     }
                                 }
                                 float timeNeeded = distance / speed;
@@ -141,8 +153,6 @@ namespace DotMaps.Utils
                 }
             }
             reader.Close();
-
-            RemoveNodesWithoutConnection(ref graph);
 
             return graph;
         }
