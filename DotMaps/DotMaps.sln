@@ -1,0 +1,43 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29920.165
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datastructures", "Datastructures\Datastructures.csproj", "{5E46422E-CDEE-4750-B6F0-894EEC123EA6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OSMSlimmer", "OSMSlimmer\OSMSlimmer.csproj", "{1C996DD3-CC89-4075-8EE6-0EB2768B552D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OSMSlimLoader", "OSMSlimLoader\OSMSlimLoader.csproj", "{E96D069C-1647-42DE-A7CA-F92B11D2A4B4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pathfinding", "Pathfinding\Pathfinding.csproj", "{43237E8C-348C-4699-8DFF-B1CD11F1FF1A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5E46422E-CDEE-4750-B6F0-894EEC123EA6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5E46422E-CDEE-4750-B6F0-894EEC123EA6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5E46422E-CDEE-4750-B6F0-894EEC123EA6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5E46422E-CDEE-4750-B6F0-894EEC123EA6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1C996DD3-CC89-4075-8EE6-0EB2768B552D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1C996DD3-CC89-4075-8EE6-0EB2768B552D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1C996DD3-CC89-4075-8EE6-0EB2768B552D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1C996DD3-CC89-4075-8EE6-0EB2768B552D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E96D069C-1647-42DE-A7CA-F92B11D2A4B4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E96D069C-1647-42DE-A7CA-F92B11D2A4B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E96D069C-1647-42DE-A7CA-F92B11D2A4B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E96D069C-1647-42DE-A7CA-F92B11D2A4B4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{43237E8C-348C-4699-8DFF-B1CD11F1FF1A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{43237E8C-348C-4699-8DFF-B1CD11F1FF1A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{43237E8C-348C-4699-8DFF-B1CD11F1FF1A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{43237E8C-348C-4699-8DFF-B1CD11F1FF1A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7D12C682-9761-403A-869F-EF5F3CFA0425}
+	EndGlobalSection
+EndGlobal
