@@ -14,14 +14,14 @@ namespace DotMaps.Datastructures
 
         public class Node
         {
-            public UInt32 id { get; }
+            public UInt64 id { get; }
             public float lat { get; }
             public float lon { get; }
             private List<Connection> connections;
             public Node previousNode { get; set; }
             public double timeRequired { get; set; }
 
-            public Node(UInt32 id, float lat, float lon)
+            public Node(UInt64 id, float lat, float lon)
             {
                 this.id = id;
                 this.lat = lat;
