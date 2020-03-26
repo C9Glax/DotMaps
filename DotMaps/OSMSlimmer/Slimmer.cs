@@ -12,17 +12,24 @@ namespace DotMaps.Utils
         public Slimmer(string path)
         {
             XmlDocument map = new XmlDocument();
+            Console.WriteLine("Loading .osm XML-Document.");
             map.Load(path);
+            Console.WriteLine("Done.");
             Graph mapGraph = new Graph();
             List<Address> addressList = new List<Address>();
 
+            Console.WriteLine("Importing Graph...");
             this.ReadXMLIntoGraph(map, ref mapGraph, ref addressList);
+            Console.WriteLine("Done.");
 
+            Console.WriteLine("Importing Addresses...");
             Graph.Node[] nodes = new Graph.Node[mapGraph.nodes.Count];
             mapGraph.nodes.Values.CopyTo(nodes, 0);
             foreach (Address address in addressList)
                 this.CalculateAssosciatedNode(address, nodes);
+            Console.WriteLine("Done.");
 
+            Console.WriteLine("Writing new file.");
             string newPath = path.Substring(0, path.Length - 4) + "_slim.osm";
             WriteToFile(mapGraph, addressList.ToArray(), newPath);
         }
