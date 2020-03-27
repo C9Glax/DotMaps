@@ -12,9 +12,19 @@ namespace DotMaps
     class TileDrawer
     {
 
-        public TileDrawer(string path)
+        public TileDrawer()
         {
-
+            Console.WriteLine("Path to .osm file");
+            Hashtable nodes = new Hashtable();
+            List<Way> ways = new List<Way>();
+            Console.WriteLine("Reading .osm");
+            Reader.ReadOSMXml(Console.ReadLine(), ref nodes, ref ways);
+            Console.WriteLine("Importing nodes");
+            Graph graph = Importer.ReadNodesIntoNewGraph(nodes);
+            Console.WriteLine("Importing ways");
+            Importer.ReadWaysIntoGraph(ways, ref graph);
+            Console.WriteLine("Path to save tiles:");
+            CreateTilesFromGraph(Console.ReadLine(), graph);
         }
 
         public static void CreateTilesFromGraph(string path, Graph graph)
@@ -24,33 +34,40 @@ namespace DotMaps
                 visible.Add(type.Split(',')[0], Convert.ToByte(type.Split(',')[1]));
             Hashtable colors = new Hashtable();
             foreach (string type in File.ReadAllLines("visible.txt"))
-                switch ((string)type.Split(',')[2])
+            {
+                if (!visible.ContainsKey(type.Split(',')[0]))
                 {
-                    case "Red":
-                        visible.Add(type.Split(',')[0], new Pen(Color.Red,5));
-                        break;
-                    case "Orange":
-                        visible.Add(type.Split(',')[0], new Pen(Color.Orange, 5));
-                        break;
-                    case "White":
-                        visible.Add(type.Split(',')[0], new Pen(Color.White, 5));
-                        break;
-                    case "Gray":
-                        visible.Add(type.Split(',')[0], new Pen(Color.Gray, 5));
-                        break;
-                    case "Yellow":
-                        visible.Add(type.Split(',')[0], new Pen(Color.Yellow, 5));
-                        break;
-                    case "Green":
-                        visible.Add(type.Split(',')[0], new Pen(Color.Green, 5));
-                        break;
-                    case "Blue":
-                        visible.Add(type.Split(',')[0], new Pen(Color.Blue, 5));
-                        break;
-                    default:
-                        visible.Add(type.Split(',')[0], new Pen(Color.Black, 5));
-                        break;
+                    switch ((string)type.Split(',')[2])
+                    {
+                        case "Red":
+                            visible.Add(type.Split(',')[0], new Pen(Color.Red, 5));
+                            break;
+                        case "Orange":
+                            visible.Add(type.Split(',')[0], new Pen(Color.Orange, 5));
+                            break;
+                        case "White":
+                            visible.Add(type.Split(',')[0], new Pen(Color.White, 5));
+                            break;
+                        case "Gray":
+                            visible.Add(type.Split(',')[0], new Pen(Color.Gray, 5));
+                            break;
+                        case "Yellow":
+                            visible.Add(type.Split(',')[0], new Pen(Color.Yellow, 5));
+                            break;
+                        case "Green":
+                            visible.Add(type.Split(',')[0], new Pen(Color.Green, 5));
+                            break;
+                        case "Blue":
+                            visible.Add(type.Split(',')[0], new Pen(Color.Blue, 5));
+                            break;
+                        default:
+                            visible.Add(type.Split(',')[0], new Pen(Color.Black, 5));
+                            break;
+                    }
                 }
+                
+            }
+                
 
             float minLat = float.MaxValue, minLon = float.MaxValue, maxLat = float.MinValue, maxLon = float.MinValue, lonDiff, latDiff;
             foreach (Node node in graph.nodes.Values)
@@ -78,7 +95,7 @@ namespace DotMaps
                                 {
                                     foreach (Connection connection in node.GetConnections())
                                     {
-                                        if ((byte)visible[connection.type] <= level)
+                                        if (connection.type != null && (byte)visible[connection.type] <= level)
                                         {
                                             float pixelX = (Functions.CalculateDistanceBetweenCoordinates(minLat, minLon, minLat, node.lon) - x) * 1000;
                                             float pixelY = (Functions.CalculateDistanceBetweenCoordinates(minLat, minLon, node.lat, minLon) - y) * 1000;
@@ -133,7 +150,7 @@ namespace DotMaps
 
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            new TileDrawer();
         }
     }
 }

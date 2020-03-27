@@ -36,8 +36,8 @@ namespace DotMaps.Utils
 
                     double distance = Functions.CalculateDistanceBetweenCoordinates(fromNode.lat, fromNode.lon, toNode.lat, toNode.lon);
                     int speed = 50;
-                    if (speeds.ContainsKey((string)way.tags["highway"]))
-                        speed = (int)way.tags["highway"];
+                    if (way.tags.ContainsKey("highway") && speeds.ContainsKey((string)way.tags["highway"]))
+                        speed = (int)speeds[(string)way.tags["highway"]];
                     if (way.tags.ContainsKey("maxspeed"))
                         try
                         {
