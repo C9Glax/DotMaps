@@ -52,24 +52,18 @@ namespace DotMaps.Pathfinding
             }
         }
 
-        public static List<Connection> FindShortestPathDistance(Graph graph, Node start, Node finish)
+        public static List<Node> FindShortestPathDistance(Graph graph, Node start, Node finish)
         {
             CalculateGraphDistance(graph, finish);
 
-            List<Connection> path = new List<Connection>();
+            List<Node> path = new List<Node>();
             Node current = start;
-            while (current != finish)
+            while(current != finish)
             {
-                foreach (Connection connection in current.previousNode.GetConnections())
-                {
-                    if (connection.neighbor == current)
-                    {
-                        path.Add(connection);
-                        break;
-                    }
-                }
+                path.Add(current);
                 current = current.previousNode;
             }
+            path.Add(finish);
             return path;
         }
 
