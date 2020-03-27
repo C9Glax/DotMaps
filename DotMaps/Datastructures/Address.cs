@@ -6,13 +6,13 @@ namespace DotMaps.Datastructures
     {
         public UInt64 assosciatedNode { get; set; }
         public string cityname { get; }
-        public UInt16 postcode { get; }
+        public string postcode { get; }
         public string steetname { get; }
         public string housenumber { get; }
         public string country { get; }
         public float lat { get; }
         public float lon { get; }
-        public Address(string country, UInt16 postcode, string cityname, string streetname, string housenumber, float lat, float lon)
+        public Address(string country, string postcode, string cityname, string streetname, string housenumber, float lat, float lon)
         {
             this.steetname = streetname;
             this.housenumber = housenumber;
@@ -23,7 +23,7 @@ namespace DotMaps.Datastructures
             this.lon = lon;
         }
 
-        public Address(string country, UInt16 postcode, string cityname, string streetname, string housenumber, float lat, float lon, UInt64 node)
+        public Address(string country, string postcode, string cityname, string streetname, string housenumber, float lat, float lon, UInt64 node)
         {
             this.steetname = streetname;
             this.housenumber = housenumber;
