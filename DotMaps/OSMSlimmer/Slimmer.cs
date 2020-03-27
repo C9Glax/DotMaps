@@ -1,204 +1,103 @@
-﻿using System;
+﻿using DotMaps.Utils;
 using DotMaps.Datastructures;
-using System.Xml;
-using System.Collections.Generic;
 using System.Collections;
-using System.IO;
+using System.Collections.Generic;
+using System;
 
-namespace DotMaps.Utils
+namespace DotMaps
 {
     public class Slimmer
     {
-        private Status status;
-        public Slimmer(string path, Status status)
+        public static void Slim(string path)
         {
-            this.status = status;
-            List<Address> addressList = new List<Address>();
+            Hashtable nodes = new Hashtable();
+            List<Way> ways = new List<Way>();
+            string bounds = Reader.ReadOSMXml(path, ref nodes, ref ways);
 
-            this.status.currentStatus = "Importing Nodes and Connections...";
-            Graph mapGraph = ConvertXMLtoGraph(path, ref addressList);
-            this.status.currentStatus = "Done importing nodes and connections. " + mapGraph.nodes.Count + " Nodes";
+            Hashtable neededNodes = new Hashtable();
+            foreach (Way way in ways)
+                if (way.tags.ContainsKey("highway"))
+                {
+                    foreach (ulong nodeId in way.nodes)
+                        if (!neededNodes.ContainsKey(nodeId))
+                            neededNodes.Add(nodeId, nodes[nodeId]);
+                }
+                else if (way.tags.ContainsKey("addr:housenumber"))
+                {
+                    if (!neededNodes.ContainsKey(way.nodes[0]))
+                        neededNodes.Add(way.nodes[0], nodes[way.nodes[0]]);
+                    way.nodes.RemoveRange(1, way.nodes.Count - 1);
+                }
 
-            this.status.currentStatus = "Removing unnecessary Nodes...";
-            RemoveNodesWithoutConnection(ref mapGraph);
-            this.status.currentStatus = "Done removing. " + mapGraph.nodes.Count + " Nodes";
 
-            this.status.currentStatus = "Importing Addresses (This is the longest part)...";
-            this.CalculateAssosciatedNodes(addressList, mapGraph);
-            this.status.currentStatus = "Done importing addresses.";
-
-            this.status.currentStatus = "Writing new file.";
             string newPath = path.Substring(0, path.Length - 4) + "_slim.osm";
-            WriteToFile(mapGraph, addressList.ToArray(), newPath);
-            this.status.currentStatus = "Done.";
-        }
+            Writer.WriteOSMXml(newPath, bounds, neededNodes, ways);
+        } 
 
-        public Graph ConvertXMLtoGraph(string path, ref List<Address> addresslist)
+        public static List<Address> CalculateAddresses(string path)
         {
-            Graph graph = new Graph();
+            Hashtable nodes = new Hashtable();
+            List<Way> ways = new List<Way>();
+            string bounds = Reader.ReadOSMXml(path, ref nodes, ref ways);
+            Graph graph = Reader.ReadNodesIntoGraph(nodes);
+            List<Address> addresses = new List<Address>();
 
-            Hashtable speeds = new Hashtable();
-            foreach (string speedString in File.ReadAllLines("speeds.txt"))
-                speeds.Add(speedString.Split(',')[0], Convert.ToSingle(speedString.Split(',')[1]));
-
-            XmlReaderSettings settings = new XmlReaderSettings
+            foreach (Way way in ways)
             {
-                IgnoreWhitespace = true
-            };
-            XmlReader reader = XmlReader.Create(path, settings);
-
-            string parent = "";
-            const byte READING = 1, DONE = 0;
-            byte state = DONE;
-            List<UInt64> wayNodeIds = new List<UInt64>();
-            Hashtable tags = new Hashtable();
-
-            while (reader.Read())
-            {
-                if (reader.Depth == 1)
+                if (way.tags.ContainsKey("addr:country") && way.tags.ContainsKey("addr:postcode") && way.tags.ContainsKey("addr:street"))
                 {
-                    if (state == READING)
-                    {
-                        state = DONE;
-                        UInt64[] nodeIds = wayNodeIds.ToArray();
+                    string county = (string)(way.tags["addr:country"]);
+                    string postcode = (string)way.tags["addr:postcode"];
+                    string city = way.tags.ContainsKey("addr:city") ? (string)way.tags["addr:city"] : "";
+                    string street = (string)way.tags["addr:street"];
+                    string housenumber = way.tags.ContainsKey("addr:housenumber") ? (string)way.tags["addr:housenumber"] : "0";
 
-                        if (tags.ContainsKey("building") && tags.ContainsKey("addr:country") && tags.ContainsKey("addr:postcode") && tags.ContainsKey("addr:street"))
-                        {
-                            string county = (string)tags["addr:country"];
-                            UInt16 postcode = 0;
-                            try
-                            {
-                                postcode = Convert.ToUInt16((string)tags["addr:postcode"]);
-                            }
-                            catch (FormatException)
-                            {
-                                this.status.currentStatus = "Format Exception postcode: " + (string)tags["addr:postcode"];
-                            }
-                            string city = tags.ContainsKey("addr:city") ? (string)tags["addr:city"] : "";
-                            string street = (string)tags["addr:street"];
-                            string housenumber = tags.ContainsKey("addr:housenumber") ? (string)tags["addr:housenumber"] : "0";
-
-                            Graph.Node buildingNode = (Graph.Node)graph.nodes[nodeIds[0]];
-
-                            Address newAddress = new Address(county, postcode, city, street, housenumber, buildingNode.lat, buildingNode.lon);
-                            addresslist.Add(newAddress);
-                        }
-                        else if (tags.ContainsKey("highway"))
-                        {
-                            for (int i = 1; i < nodeIds.Length; i++)
-                            {
-                                Graph.Node destination = (Graph.Node)graph.nodes[nodeIds[i]];
-                                Graph.Node start = (Graph.Node)graph.nodes[nodeIds[i - 1]];
-
-                                float distance = CalculateDistanceBetween(destination, start);
-                                int speed = speeds.ContainsKey(tags["highway"].ToString()) ? Convert.ToInt32(speeds[tags["highway"].ToString()]) : 1;
-                                if (tags.ContainsKey("maxspeed"))
-                                {
-                                    try
-                                    {
-                                        speed = tags.ContainsKey("maxspeed") ? Convert.ToInt32((string)tags["maxspeed"]) : speed;
-                                    }
-                                    catch (FormatException)
-                                    {
-                                        switch ((string)tags["maxspeed"])
-                                        {
-                                            case "none":
-                                                speed = 150;
-                                                break;
-                                            default:
-                                                this.status.currentStatus = "Warn: unexpected value for maxspeed: " + (string)tags["maxspeed"]; 
-                                                break;
-                                        }
-                                    }
-                                }
-                                float timeNeeded = distance / speed;
-                                string type = (string)tags["highway"];
-
-                                Graph.Connection to = new Graph.Connection(distance, timeNeeded, start, type);
-                                destination.AddConnection(to);
-                                if (!tags.ContainsKey("oneway") || (string)tags["oneway"] != "yes")
-                                {
-                                    Graph.Connection from = new Graph.Connection(distance, timeNeeded, destination, type);
-                                    start.AddConnection(from);
-                                }
-                            }
-
-                            if (tags.ContainsKey("name"))
-                            {
-                                //TODO streetname
-                            }
-                        }
-                    }
-                    parent = reader.Name;
-                    if (reader.Name == "node" && reader.NodeType != XmlNodeType.EndElement)
-                    {
-                        UInt64 nodeId = Convert.ToUInt64(reader.GetAttribute("id"));
-                        float lat = Convert.ToSingle(reader.GetAttribute("lat").Replace('.', ','));
-                        float lon = Convert.ToSingle(reader.GetAttribute("lon").Replace('.', ','));
-                        Graph.Node newNode = new Graph.Node(nodeId, lat, lon);
-                        graph.nodes.Add(nodeId, newNode);
-                    }
-                }
-                else if (reader.Depth == 2 && parent == "way")
-                {
-                    if (state == DONE)
-                    {
-                        wayNodeIds = new List<UInt64>();
-                        tags = new Hashtable();
-                        state = READING;
-                    }
-                    if (reader.Name == "nd")
-                        wayNodeIds.Add(Convert.ToUInt64(reader.GetAttribute("ref")));
-                    else if (reader.Name == "tag")
-                        tags.Add(reader.GetAttribute("k"), reader.GetAttribute("v"));
+                    Node buildingNode = (Node)graph.nodes[way.nodes[0]];
+                    if (buildingNode != null)
+                        addresses.Add(new Address(county, postcode, city, street, housenumber, buildingNode.lat, buildingNode.lon));
+                    else
+                        Console.WriteLine(way.nodes[0]);
                 }
             }
-            reader.Close();
 
-            return graph;
-        }
+            float minLat = Convert.ToSingle(bounds.Substring(bounds.IndexOf("minlat") + 8, bounds.IndexOf('"', bounds.IndexOf("minlat") + 9) - bounds.IndexOf("minlat") - 8).Replace('.', ','));
+            float minLon = Convert.ToSingle(bounds.Substring(bounds.IndexOf("minlon") + 8, bounds.IndexOf('"', bounds.IndexOf("minlon") + 9) - bounds.IndexOf("minlon") - 8).Replace('.', ','));
+            float maxLat = Convert.ToSingle(bounds.Substring(bounds.IndexOf("maxlat") + 8, bounds.IndexOf('"', bounds.IndexOf("maxlat") + 9) - bounds.IndexOf("maxlat") - 8).Replace('.', ','));
+            float maxLon = Convert.ToSingle(bounds.Substring(bounds.IndexOf("maxlon") + 8, bounds.IndexOf('"', bounds.IndexOf("maxlon") + 9) - bounds.IndexOf("maxlon") - 8).Replace('.', ','));
 
-        public void CalculateAssosciatedNodes(List<Address> addresses, Graph graph)
-        {
-            List<Graph.Node>[,] grid = this.CreateGrid(graph);
+            double latDiff = CalculateDistanceBetweenCoordinates(minLat, minLon, maxLat, minLon);
+            double lonDiff = CalculateDistanceBetweenCoordinates(minLat, minLon, minLat, maxLon);
 
-            float minLat = float.MaxValue, minLon = float.MaxValue, maxLat = float.MinValue, maxLon = float.MinValue;
-            foreach (Graph.Node node in graph.nodes.Values)
+            List<Node>[,] grid = new List<Node>[(int)Math.Ceiling(lonDiff)+1, (int)Math.Ceiling(latDiff)+1];
+            for (int px = 0; px < grid.GetLength(0); px++)
+                for (int py = 0; py < grid.GetLength(1); py++)
+                    grid[px, py] = new List<Node>();
+
+            int nodeX, nodeY;
+            foreach (Node node in graph.nodes.Values)
             {
-                if (minLat > node.lat)
-                    minLat = node.lat;
-                if (minLon > node.lon)
-                    minLon = node.lon;
-                if (maxLat < node.lat)
-                    maxLat = node.lat;
-                if (maxLon < node.lon)
-                    maxLon = node.lon;
+                nodeX = (int)Math.Floor(CalculateDistanceBetweenCoordinates(minLat, minLon, minLat, node.lon));
+                nodeY = (int)Math.Floor(CalculateDistanceBetweenCoordinates(minLat, minLon, node.lat, minLon));
+                grid[nodeX, nodeY].Add(node);
             }
-
-            uint count = 0;
-            DateTime start = DateTime.Now;
-            TimeSpan elapsed, remaining;
 
             float shortestDistance, testDistance;
-            Graph.Node shortestNode = null;
-            int x, y;
-            List<Graph.Node> search;
+            Node shortestNode = null;
+            int addressX, addressY;
+            List<Node> search;
             foreach (Address address in addresses)
             {
-                elapsed = DateTime.Now.Subtract(start);
-                remaining = TimeSpan.FromSeconds(elapsed.TotalSeconds / count * (addresses.Count - count));
-                this.status.currentStatus = "Calculating " + ++count + "/" + addresses.Count + " " + remaining.Hours +":"+remaining.Minutes+":"+remaining.Seconds;
-                x = (int)Math.Ceiling(CalculateDistanceBetweenCoordinates(minLat, minLon, minLat, address.lon));
-                y = (int)Math.Ceiling(CalculateDistanceBetweenCoordinates(minLat, minLon, address.lat, minLon));
+                addressX = (int)Math.Ceiling(CalculateDistanceBetweenCoordinates(minLat, minLon, minLat, address.lon));
+                addressY = (int)Math.Ceiling(CalculateDistanceBetweenCoordinates(minLat, minLon, address.lat, minLon));
 
                 shortestDistance = float.MaxValue;
 
-                search = new List<Graph.Node>();
-                for(int px = (x > 0) ? x-1 : 0 ; px < grid.GetLength(0) ; px++)
-                    for (int py = (y > 0) ? y - 1 : 0; py < grid.GetLength(1); py++)
+                search = new List<Node>();
+                for (int px = (addressX > 0) ? addressX - 1 : 0; px < grid.GetLength(0); px++)
+                    for (int py = (addressY > 0) ? addressY - 1 : 0; py < grid.GetLength(1); py++)
                         search.AddRange(grid[px, py]);
 
-                foreach (Graph.Node testNode in search)
+                foreach (Node testNode in search)
                 {
                     testDistance = CalculateDistanceBetweenCoordinates(address.lat, address.lon, testNode.lat, testNode.lon);
                     if (testDistance < shortestDistance)
@@ -210,38 +109,8 @@ namespace DotMaps.Utils
 
                 address.assosciatedNode = shortestNode.id;
             }
-        }
-        private List<Graph.Node>[,] CreateGrid(Graph graph)
-        {
-            float minLat = float.MaxValue, minLon = float.MaxValue, maxLat = float.MinValue, maxLon = float.MinValue;
-            foreach (Graph.Node node in graph.nodes.Values)
-            {
-                if (minLat > node.lat)
-                    minLat = node.lat;
-                if (minLon > node.lon)
-                    minLon = node.lon;
-                if (maxLat < node.lat)
-                    maxLat = node.lat;
-                if (maxLon < node.lon)
-                    maxLon = node.lon;
-            }
 
-            double latDiff = CalculateDistanceBetweenCoordinates(minLat, minLon, maxLat, minLon);
-            double lonDiff = CalculateDistanceBetweenCoordinates(minLat, minLon, minLat, maxLon);
-            this.status.currentStatus = "Size of area: " + (int)Math.Ceiling(lonDiff) + "x" + (int)Math.Ceiling(latDiff);
-
-            List<Graph.Node>[,] grid = new List<Graph.Node>[(int)Math.Ceiling(lonDiff), (int)Math.Ceiling(latDiff)];
-            for (int px = 0; px < grid.GetLength(0); px++)
-                for (int py = 0; py < grid.GetLength(1); py++)
-                    grid[px, py] = new List<Graph.Node>();
-
-            foreach (Graph.Node node in graph.nodes.Values)
-            {
-                int x = (int)Math.Floor(CalculateDistanceBetweenCoordinates(node.lat, minLon, node.lat, node.lon));
-                int y = (int)Math.Floor(CalculateDistanceBetweenCoordinates(minLat, node.lon, node.lat, node.lon));
-                grid[x, y].Add(node);
-            }
-            return grid;
+            return addresses;
         }
 
         private static float CalculateDistanceBetweenCoordinates(float lat1, float lon1, float lat2, float lon2)
@@ -259,100 +128,14 @@ namespace DotMaps.Utils
             return Convert.ToSingle(earthRadius * c);
         }
 
-        private static float CalculateDistanceBetween(Graph.Node node1, Graph.Node node2)
-        {
-            return CalculateDistanceBetweenCoordinates(node1.lat, node1.lon, node2.lat, node2.lon);
-        }
-
         private static float DegreesToRadians(float degrees)
         {
             return degrees * Convert.ToSingle(Math.PI) / 180;
         }
 
-        private static void RemoveNodesWithoutConnection(ref Graph graph)
+        public static void Main(string[] args)
         {
-            Graph.Node[] nodes = new Graph.Node[graph.nodes.Count];
-            graph.nodes.Values.CopyTo(nodes, 0);
-
-
-            foreach (Graph.Node node in nodes)
-                foreach (Graph.Connection connection in node.GetConnections())
-                {
-                    node.timeRequired = double.MinValue;
-                    connection.neighbor.timeRequired = double.MinValue;
-                }
-
-            foreach (Graph.Node node in nodes)
-                if (node.timeRequired == double.MinValue)
-                    node.timeRequired = double.MaxValue;
-                else
-                    graph.nodes.Remove(node.id);
-        }
-
-        private static void WriteToFile(Graph mapGraph, Address[] addressList, string path)
-        {
-            using (StreamWriter writer = new StreamWriter(path))
-            {
-                writer.WriteLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-                writer.WriteLine("<slim>");
-                writer.WriteLine("  <nodes>");
-                foreach (Graph.Node node in mapGraph.nodes.Values)
-                {
-                    writer.WriteLine("    <node lat=\"" + node.lat.ToString() + "\" lon=\"" + node.lon.ToString() + "\" id=\"" + node.id + "\">");
-                    if (node.GetConnections().Length < 1)
-                        writer.WriteLine("      <connections />");
-                    else
-                    {
-                        writer.WriteLine("      <connections>");
-                        foreach (Graph.Connection connection in node.GetConnections())
-                        {
-                            writer.WriteLine("        <connection id=\"" + connection.neighbor.id + "\" distance=\"" + connection.distance + "\" time=\"" + connection.distance + "\" type=\"" + connection.type + "\" />");
-                        }
-                        writer.WriteLine("      </connections>");
-                    }
-                    writer.WriteLine("    </node>");
-                }
-                writer.WriteLine("  </nodes>");
-                writer.WriteLine("  <addresses>");
-                foreach (Address address in addressList)
-                {
-                    writer.WriteLine("    <address id=\""+address.assosciatedNode.ToString()+"\" countrycode=\"" + address.country + "\" cityname=\"" + address.cityname + "\" postcode=\"" + address.postcode.ToString() + "\" streetname=\"" + address.steetname + "\" housenumber=\"" + address.housenumber + "\" lat=\"" + address.lat + "\" lon=\"" + address.lon + "\" />");
-                }
-                writer.WriteLine("  </addresses>");
-                writer.WriteLine("</slim>");
-                writer.Close();
-            }
-        }
-
-        static void Main(string[] args)
-        {
-            Status status = new Status();
-            System.Threading.Thread logger = new System.Threading.Thread(Log);
-            logger.Start(status);
-
-            if (args.Length > 0)
-                new Slimmer(args[0], status);
-            else
-            {
-                Console.WriteLine("What is the path to the .osm file?");
-                new Slimmer(@Console.ReadLine(), status);
-            }
-
-        }
-
-        private static void Log(object status)
-        {
-            Status localStatus = (Status)status;
-            string currentStatus = "";
-            while (true)
-            {
-                if(currentStatus != localStatus.currentStatus)
-                {
-                    currentStatus = localStatus.currentStatus;
-                    Console.WriteLine(currentStatus);
-                }
-                System.Threading.Thread.Sleep(2);
-            }
+            Slimmer.Slim(@"C:\Users\Jann\Desktop\ersdorf.osm");
         }
     }
 }
