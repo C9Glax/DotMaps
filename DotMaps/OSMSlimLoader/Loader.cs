@@ -7,14 +7,6 @@ namespace DotMaps.Utils
 {
     public class Loader
     {
-
-        public static void Main(string[] args)
-        {
-            Graph graph = new Graph();
-            List<Address> addresses = new List<Address>();
-            LoadXML(ref graph, ref addresses, @"D:\Jann\Downloads\koeln_slim.osm");
-        }
-
         public static void LoadXML(ref Graph graph, ref List<Address> addresses, string path)
         {
             XmlReaderSettings settings = new XmlReaderSettings
