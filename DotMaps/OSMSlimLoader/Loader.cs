@@ -17,8 +17,10 @@ namespace DotMaps.Utils
 
         public static void LoadXML(ref Graph graph, ref List<Address> addresses, string path)
         {
-            XmlReaderSettings settings = new XmlReaderSettings();
-            settings.IgnoreWhitespace = true;
+            XmlReaderSettings settings = new XmlReaderSettings
+            {
+                IgnoreWhitespace = true
+            };
             XmlReader reader = XmlReader.Create(path, settings);
 
 
