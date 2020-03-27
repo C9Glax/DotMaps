@@ -7,6 +7,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Datastructures\Datastructures.csproj" />
+    <ProjectReference Include="..\Status\Status.csproj" />
   </ItemGroup>
 
   <ItemGroup>

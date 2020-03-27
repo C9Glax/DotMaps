@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading.Tasks;
 using DotMaps.Datastructures;
 using System.Xml;
 using System.Collections.Generic;
@@ -8,31 +7,33 @@ using System.IO;
 
 namespace DotMaps.Utils
 {
-    class Slimmer
+    public class Slimmer
     {
-
-        public Slimmer(string path)
+        private Status status;
+        public Slimmer(string path, Status status)
         {
+            this.status = status;
             List<Address> addressList = new List<Address>();
 
-            Console.WriteLine("Importing Nodes and Connections...");
-            Graph mapGraph = ConvertXMLtoGraph(path, addressList);
-            Console.WriteLine("Done. {0} Nodes", mapGraph.nodes.Count);
+            this.status.currentStatus = "Importing Nodes and Connections...";
+            Graph mapGraph = ConvertXMLtoGraph(path, ref addressList);
+            this.status.currentStatus = "Done importing nodes and connections. " + mapGraph.nodes.Count + " Nodes";
 
-            Console.WriteLine("Removing unnecessary Nodes...");
+            this.status.currentStatus = "Removing unnecessary Nodes...";
             RemoveNodesWithoutConnection(ref mapGraph);
-            Console.WriteLine("Done. {0} Nodes", mapGraph.nodes.Count);
+            this.status.currentStatus = "Done removing. " + mapGraph.nodes.Count + " Nodes";
 
-            Console.WriteLine("Importing Addresses (This is the longest part)...");
+            this.status.currentStatus = "Importing Addresses (This is the longest part)...";
             this.CalculateAssosciatedNodes(addressList, mapGraph);
-            Console.WriteLine("Done.");
+            this.status.currentStatus = "Done importing addresses.";
 
-            Console.WriteLine("Writing new file.");
+            this.status.currentStatus = "Writing new file.";
             string newPath = path.Substring(0, path.Length - 4) + "_slim.osm";
             WriteToFile(mapGraph, addressList.ToArray(), newPath);
+            this.status.currentStatus = "Done.";
         }
 
-        public Graph ConvertXMLtoGraph(string path, List<Address> addresslist)
+        public Graph ConvertXMLtoGraph(string path, ref List<Address> addresslist)
         {
             Graph graph = new Graph();
 
@@ -71,7 +72,7 @@ namespace DotMaps.Utils
                             }
                             catch (FormatException)
                             {
-                                Console.WriteLine("Format Exception postcode: {0}", (string)tags["addr:postcode"]);
+                                this.status.currentStatus = "Format Exception postcode: " + (string)tags["addr:postcode"];
                             }
                             string city = tags.ContainsKey("addr:city") ? (string)tags["addr:city"] : "";
                             string street = (string)tags["addr:street"];
@@ -105,7 +106,7 @@ namespace DotMaps.Utils
                                                 speed = 150;
                                                 break;
                                             default:
-                                                Console.WriteLine("Warn: unexpected value for maxspeed: {0}", (string)tags["maxspeed"]);
+                                                this.status.currentStatus = "Warn: unexpected value for maxspeed: " + (string)tags["maxspeed"]; 
                                                 break;
                                         }
                                     }
@@ -174,11 +175,9 @@ namespace DotMaps.Utils
                     maxLon = node.lon;
             }
 
-            int saveLeft = Console.CursorLeft;
-            int saveTop = Console.CursorTop;
             uint count = 0;
             DateTime start = DateTime.Now;
-            TimeSpan elapsed;
+            TimeSpan elapsed, remaining;
 
             float shortestDistance, testDistance;
             Graph.Node shortestNode = null;
@@ -186,9 +185,9 @@ namespace DotMaps.Utils
             List<Graph.Node> search;
             foreach (Address address in addresses)
             {
-                Console.SetCursorPosition(saveLeft, saveTop);
                 elapsed = DateTime.Now.Subtract(start);
-                Console.WriteLine("Calculating {0}/{1} {2}s", ++count, addresses.Count, elapsed.TotalSeconds / count * (addresses.Count - count));
+                remaining = TimeSpan.FromSeconds(elapsed.TotalSeconds / count * (addresses.Count - count));
+                this.status.currentStatus = "Calculating " + ++count + "/" + addresses.Count + " " + remaining.Hours +":"+remaining.Minutes+":"+remaining.Seconds;
                 x = (int)Math.Ceiling(CalculateDistanceBetweenCoordinates(minLat, minLon, minLat, address.lon));
                 y = (int)Math.Ceiling(CalculateDistanceBetweenCoordinates(minLat, minLon, address.lat, minLon));
 
@@ -229,7 +228,7 @@ namespace DotMaps.Utils
 
             double latDiff = CalculateDistanceBetweenCoordinates(minLat, minLon, maxLat, minLon);
             double lonDiff = CalculateDistanceBetweenCoordinates(minLat, minLon, minLat, maxLon);
-            Console.WriteLine("Size of area: {0}x{1}km", (int)Math.Ceiling(lonDiff), (int)Math.Ceiling(latDiff));
+            this.status.currentStatus = "Size of area: " + (int)Math.Ceiling(lonDiff) + "x" + (int)Math.Ceiling(latDiff);
 
             List<Graph.Node>[,] grid = new List<Graph.Node>[(int)Math.Ceiling(lonDiff), (int)Math.Ceiling(latDiff)];
             for (int px = 0; px < grid.GetLength(0); px++)
@@ -327,14 +326,33 @@ namespace DotMaps.Utils
 
         static void Main(string[] args)
         {
+            Status status = new Status();
+            System.Threading.Thread logger = new System.Threading.Thread(Log);
+            logger.Start(status);
+
             if (args.Length > 0)
-                new Slimmer(args[0]);
+                new Slimmer(args[0], status);
             else
             {
                 Console.WriteLine("What is the path to the .osm file?");
-                new Slimmer(@Console.ReadLine());
+                new Slimmer(@Console.ReadLine(), status);
             }
 
+        }
+
+        private static void Log(object status)
+        {
+            Status localStatus = (Status)status;
+            string currentStatus = "";
+            while (true)
+            {
+                if(currentStatus != localStatus.currentStatus)
+                {
+                    currentStatus = localStatus.currentStatus;
+                    Console.WriteLine(currentStatus);
+                }
+                System.Threading.Thread.Sleep(2);
+            }
         }
     }
 }
