@@ -294,7 +294,7 @@ namespace DotMaps.Utils
         {
             using (StreamWriter writer = new StreamWriter(path))
             {
-                writer.WriteLine("<?xml version=\"1.0\" encoding=\"UTF - 8\"?>");
+                writer.WriteLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
                 writer.WriteLine("<slim>");
                 writer.WriteLine("  <nodes>");
                 foreach (Graph.Node node in mapGraph.nodes.Values)
