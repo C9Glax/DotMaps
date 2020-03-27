@@ -15,7 +15,7 @@ namespace DotMaps.Utils
         {
             List<Address> addressList = new List<Address>();
 
-            Console.WriteLine("Importing Nodes...");
+            Console.WriteLine("Importing Nodes and Connections...");
             Graph mapGraph = ConvertXMLtoGraph(path, addressList);
             Console.WriteLine("Done. {0} Nodes", mapGraph.nodes.Count);
 
@@ -23,12 +23,9 @@ namespace DotMaps.Utils
             RemoveNodesWithoutConnection(ref mapGraph);
             Console.WriteLine("Done. {0} Nodes", mapGraph.nodes.Count);
 
-            /*Console.WriteLine("Importing Addresses...");
-            Graph.Node[] nodes = new Graph.Node[mapGraph.nodes.Count];
-            mapGraph.nodes.Values.CopyTo(nodes, 0);
-            foreach (Address address in addressList)
-                this.CalculateAssosciatedNode(address, nodes);
-            Console.WriteLine("Done.");*/
+            Console.WriteLine("Importing Addresses (This is the longest part)...");
+            this.CalculateAssosciatedNodes(addressList, mapGraph);
+            Console.WriteLine("Done.");
 
             Console.WriteLine("Writing new file.");
             string newPath = path.Substring(0, path.Length - 4) + "_slim.osm";
@@ -43,13 +40,14 @@ namespace DotMaps.Utils
             foreach (string speedString in File.ReadAllLines("speeds.txt"))
                 speeds.Add(speedString.Split(',')[0], Convert.ToSingle(speedString.Split(',')[1]));
 
-            XmlReaderSettings settings = new XmlReaderSettings();
-            settings.IgnoreWhitespace = true;
+            XmlReaderSettings settings = new XmlReaderSettings
+            {
+                IgnoreWhitespace = true
+            };
             XmlReader reader = XmlReader.Create(path, settings);
 
             string parent = "";
-            const byte READING = 1;
-            const byte DONE = 0;
+            const byte READING = 1, DONE = 0;
             byte state = DONE;
             List<UInt64> wayNodeIds = new List<UInt64>();
             Hashtable tags = new Hashtable();
@@ -159,23 +157,92 @@ namespace DotMaps.Utils
             return graph;
         }
 
-        public void CalculateAssosciatedNode(Address address, Graph.Node[] nodes)
+        public void CalculateAssosciatedNodes(List<Address> addresses, Graph graph)
         {
-            float shortestDistance = float.MaxValue;
-            Graph.Node shortestNode = null;
+            List<Graph.Node>[,] grid = this.CreateGrid(graph);
 
-
-            foreach (Graph.Node testNode in nodes)
+            float minLat = float.MaxValue, minLon = float.MaxValue, maxLat = float.MinValue, maxLon = float.MinValue;
+            foreach (Graph.Node node in graph.nodes.Values)
             {
-                float testDistance = CalculateDistanceBetweenCoordinates(address.lat, address.lon, testNode.lat, testNode.lon);
-                if (testDistance < shortestDistance)
-                {
-                    shortestDistance = testDistance;
-                    shortestNode = testNode;
-                }
+                if (minLat > node.lat)
+                    minLat = node.lat;
+                if (minLon > node.lon)
+                    minLon = node.lon;
+                if (maxLat < node.lat)
+                    maxLat = node.lat;
+                if (maxLon < node.lon)
+                    maxLon = node.lon;
             }
 
-            address.assosciatedNode = shortestNode.id;
+            int saveLeft = Console.CursorLeft;
+            int saveTop = Console.CursorTop;
+            uint count = 0;
+            DateTime start = DateTime.Now;
+            TimeSpan elapsed;
+
+            float shortestDistance, testDistance;
+            Graph.Node shortestNode = null;
+            int x, y;
+            List<Graph.Node> search;
+            foreach (Address address in addresses)
+            {
+                Console.SetCursorPosition(saveLeft, saveTop);
+                elapsed = DateTime.Now.Subtract(start);
+                Console.WriteLine("Calculating {0}/{1} {2}s", ++count, addresses.Count, elapsed.TotalSeconds / count * (addresses.Count - count));
+                x = (int)Math.Ceiling(CalculateDistanceBetweenCoordinates(minLat, minLon, minLat, address.lon));
+                y = (int)Math.Ceiling(CalculateDistanceBetweenCoordinates(minLat, minLon, address.lat, minLon));
+
+                shortestDistance = float.MaxValue;
+
+                search = new List<Graph.Node>();
+                for(int px = (x > 0) ? x-1 : 0 ; px < grid.GetLength(0) ; px++)
+                    for (int py = (y > 0) ? y - 1 : 0; py < grid.GetLength(1); py++)
+                        search.AddRange(grid[px, py]);
+
+                foreach (Graph.Node testNode in search)
+                {
+                    testDistance = CalculateDistanceBetweenCoordinates(address.lat, address.lon, testNode.lat, testNode.lon);
+                    if (testDistance < shortestDistance)
+                    {
+                        shortestDistance = testDistance;
+                        shortestNode = testNode;
+                    }
+                }
+
+                address.assosciatedNode = shortestNode.id;
+            }
+        }
+        private List<Graph.Node>[,] CreateGrid(Graph graph)
+        {
+            float minLat = float.MaxValue, minLon = float.MaxValue, maxLat = float.MinValue, maxLon = float.MinValue;
+            foreach (Graph.Node node in graph.nodes.Values)
+            {
+                if (minLat > node.lat)
+                    minLat = node.lat;
+                if (minLon > node.lon)
+                    minLon = node.lon;
+                if (maxLat < node.lat)
+                    maxLat = node.lat;
+                if (maxLon < node.lon)
+                    maxLon = node.lon;
+            }
+
+            double latDiff = CalculateDistanceBetweenCoordinates(minLat, minLon, maxLat, minLon);
+            double lonDiff = CalculateDistanceBetweenCoordinates(minLat, minLon, minLat, maxLon);
+            Console.WriteLine("Size of area: {0}x{1}km", (int)Math.Ceiling(lonDiff), (int)Math.Ceiling(latDiff));
+
+            List<Graph.Node>[,] grid = new List<Graph.Node>[(int)Math.Ceiling(lonDiff), (int)Math.Ceiling(latDiff)];
+            for (int px = 0; px < grid.GetLength(0); px++)
+                for (int py = 0; py < grid.GetLength(1); py++)
+                    grid[px, py] = new List<Graph.Node>();
+
+            foreach (Graph.Node node in graph.nodes.Values)
+            {
+                int x = (int)Math.Floor(CalculateDistanceBetweenCoordinates(node.lat, minLon, node.lat, node.lon));
+                int y = (int)Math.Floor(CalculateDistanceBetweenCoordinates(minLat, node.lon, node.lat, node.lon));
+                grid[x, y].Add(node);
+            }
+            return grid;
         }
 
         private static float CalculateDistanceBetweenCoordinates(float lat1, float lon1, float lat2, float lon2)
@@ -227,6 +294,7 @@ namespace DotMaps.Utils
         {
             using (StreamWriter writer = new StreamWriter(path))
             {
+                writer.WriteLine("<?xml version=\"1.0\" encoding=\"UTF - 8\"?>");
                 writer.WriteLine("<slim>");
                 writer.WriteLine("  <nodes>");
                 foreach (Graph.Node node in mapGraph.nodes.Values)
@@ -249,7 +317,7 @@ namespace DotMaps.Utils
                 writer.WriteLine("  <addresses>");
                 foreach (Address address in addressList)
                 {
-                    writer.WriteLine("    <address countrycode=\"" + address.country + "\" cityname=\"" + address.cityname + "\" postcode=\"" + address.postcode.ToString() + "\" streetname=\"" + address.steetname + "\" housenumber=\"" + address.housenumber + "\" lat=\"" + address.lat + "\" lon=\"" + address.lon + "\" />");
+                    writer.WriteLine("    <address id=\""+address.assosciatedNode.ToString()+"\" countrycode=\"" + address.country + "\" cityname=\"" + address.cityname + "\" postcode=\"" + address.postcode.ToString() + "\" streetname=\"" + address.steetname + "\" housenumber=\"" + address.housenumber + "\" lat=\"" + address.lat + "\" lon=\"" + address.lon + "\" />");
                 }
                 writer.WriteLine("  </addresses>");
                 writer.WriteLine("</slim>");
