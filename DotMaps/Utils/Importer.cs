@@ -2,9 +2,8 @@
 using System.Collections.Generic;
 using System.Collections;
 using DotMaps.Datastructures;
-using DotMaps.Utils;
 
-namespace Utils
+namespace DotMaps.Utils
 {
     public class Importer
     {
