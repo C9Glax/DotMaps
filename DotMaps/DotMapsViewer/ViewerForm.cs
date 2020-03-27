@@ -8,6 +8,8 @@ using System.Text;
 using System.Threading;
 using System.Windows.Forms;
 using DotMaps.Utils;
+using DotMaps.Datastructures;
+using DotMaps;
 
 namespace DotMaps
 {
@@ -15,6 +17,8 @@ namespace DotMaps
     {
         private Status status;
         private Thread statusThread;
+        private Graph mapGraph;
+        private List<Address> addresslist;
 
         public ViewerForm()
         {
@@ -51,6 +55,25 @@ namespace DotMaps
         private void slimmerThread(object path)
         {
             new Slimmer((string)path, this.status);
+        }
+
+        private void loadMapToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using (OpenFileDialog openFileDialog = new OpenFileDialog())
+            {
+                openFileDialog.Filter = "OpenStreetMaps files (*.osm)|*.osm";
+                openFileDialog.FilterIndex = 1;
+                openFileDialog.RestoreDirectory = true;
+
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    this.mapGraph = new Graph();
+                    this.addresslist = new List<Address>();
+                    Loader.LoadXML(ref this.mapGraph, ref this.addresslist, openFileDialog.FileName);
+                    this.status.currentStatus = "Done loading map";
+                    //CONTINUE HERE
+                }
+            }
         }
     }
 }
