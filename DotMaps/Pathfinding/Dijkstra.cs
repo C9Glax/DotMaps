@@ -7,15 +7,15 @@ namespace DotMaps.Pathfinding
     public class Dijkstra
     {
 
-        public static List<Graph.Connection> FindShortestPathTime(Graph graph, Graph.Node start, Graph.Node finish)
+        public static List<Connection> FindShortestPathTime(Graph graph, Node start, Node finish)
         {
             Graph calculated = FindShortestPathTime(graph, finish);
 
-            List<Graph.Connection> path = new List<Graph.Connection>();
-            Graph.Node current = start;
+            List<Connection> path = new List<Connection>();
+            Node current = start;
             while (current != finish)
             {
-                foreach (Graph.Connection connection in current.previousNode.GetConnections())
+                foreach (Connection connection in current.previousNode.GetConnections())
                 {
                     if (connection.neighbor == current)
                     {
@@ -28,9 +28,9 @@ namespace DotMaps.Pathfinding
             return path;
         }
 
-        public static Graph FindShortestPathTime(Graph graph, Graph.Node finish)
+        public static Graph FindShortestPathTime(Graph graph, Node finish)
         {
-            foreach (Graph.Node node in graph.nodes.Values)
+            foreach (Node node in graph.nodes.Values)
             {
                 node.previousNode = null;
                 node.timeRequired = double.MaxValue;
@@ -40,9 +40,9 @@ namespace DotMaps.Pathfinding
             return graph;
         }
 
-        private static void DijkstraTime(ref Graph graph, Graph.Node current)
+        private static void DijkstraTime(ref Graph graph, Node current)
         {
-            foreach (Graph.Connection connection in current.GetConnections())
+            foreach (Connection connection in current.GetConnections())
             {
                 if (connection.neighbor.timeRequired > current.timeRequired + connection.timeNeeded)
                 {
@@ -53,15 +53,15 @@ namespace DotMaps.Pathfinding
             }
         }
 
-        public static List<Graph.Connection> FindShortestPathDistance(Graph graph, Graph.Node start, Graph.Node finish)
+        public static List<Connection> FindShortestPathDistance(Graph graph, Node start, Node finish)
         {
             Graph calculated = FindShortestPathDistance(graph, finish);
 
-            List<Graph.Connection> path = new List<Graph.Connection>();
-            Graph.Node current = start;
+            List<Connection> path = new List<Connection>();
+            Node current = start;
             while (current != finish)
             {
-                foreach (Graph.Connection connection in current.previousNode.GetConnections())
+                foreach (Connection connection in current.previousNode.GetConnections())
                 {
                     if (connection.neighbor == current)
                     {
@@ -74,9 +74,9 @@ namespace DotMaps.Pathfinding
             return path;
         }
 
-        public static Graph FindShortestPathDistance(Graph graph, Graph.Node finish)
+        public static Graph FindShortestPathDistance(Graph graph, Node finish)
         {
-            foreach (Graph.Node node in graph.nodes.Values)
+            foreach (Node node in graph.nodes.Values)
             {
                 node.previousNode = null;
                 node.timeRequired = double.MaxValue;
@@ -86,9 +86,9 @@ namespace DotMaps.Pathfinding
             return graph;
         }
 
-        private static void DijkstraDistance(ref Graph graph, Graph.Node current)
+        private static void DijkstraDistance(ref Graph graph, Node current)
         {
-            foreach (Graph.Connection connection in current.GetConnections())
+            foreach (Connection connection in current.GetConnections())
             {
                 if (connection.neighbor.timeRequired > current.timeRequired + connection.distance)
                 {

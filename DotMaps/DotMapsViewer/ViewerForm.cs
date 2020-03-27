@@ -54,7 +54,7 @@ namespace DotMaps
         }
         private void slimmerThread(object path)
         {
-            new Slimmer((string)path, this.status);
+            new SlimmerOld((string)path, this.status);
         }
 
         private void loadMapToolStripMenuItem_Click(object sender, EventArgs e)

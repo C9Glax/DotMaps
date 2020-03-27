@@ -7,6 +7,7 @@ namespace DotMaps.Utils
 {
     public class Loader
     {
+        /*
         public static void LoadXML(ref Graph graph, ref List<Address> addresses, string path)
         {
             XmlReaderSettings settings = new XmlReaderSettings
@@ -23,8 +24,8 @@ namespace DotMaps.Utils
                     UInt64 nodeId = Convert.ToUInt64(reader.GetAttribute("id"));
                     float lat = Convert.ToSingle(reader.GetAttribute("lat").Replace('.', ','));
                     float lon = Convert.ToSingle(reader.GetAttribute("lon").Replace('.', ','));
-                    Graph.Node newNode = new Graph.Node(nodeId, lat, lon);
-                    graph.nodes.Add(nodeId, newNode);
+                    Node newNode = new Node(nodeId, lat, lon);
+                    Nodes.Add(nodeId, newNode);
                 }
                 else if (reader.NodeType != XmlNodeType.EndElement && reader.Name == "address")
                 {
@@ -42,13 +43,13 @@ namespace DotMaps.Utils
             reader.Close();
             reader = XmlReader.Create(path, settings);
 
-            Graph.Node currentNode = null;
+            Node currentNode = null;
             while (reader.Read())
             {
                 if (reader.NodeType != XmlNodeType.EndElement && reader.Name == "node")
                 {
                     UInt64 nodeId = Convert.ToUInt64(reader.GetAttribute("id"));
-                    currentNode = (Graph.Node)graph.nodes[nodeId];
+                    currentNode = (Node)Nodes[nodeId];
                 }
                 else if (reader.NodeType != XmlNodeType.EndElement && reader.Name == "connection")
                 {
@@ -57,13 +58,13 @@ namespace DotMaps.Utils
                     string type = reader.GetAttribute("type");
 
                     UInt64 nodeId = Convert.ToUInt64(reader.GetAttribute("id"));
-                    Graph.Node neighbor = (Graph.Node)graph.nodes[nodeId];
+                    Node neighbor = (Node)Nodes[nodeId];
 
                     Graph.Connection newConnection = new Graph.Connection(distance, timeNeeded, neighbor, type);
                     currentNode.AddConnection(newConnection);
                 }
             }
             reader.Close();
-        }
+        }*/
     }
 }
