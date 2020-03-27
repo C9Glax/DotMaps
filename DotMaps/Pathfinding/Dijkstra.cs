@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using DotMaps.Datastructures;
 
 namespace DotMaps.Pathfinding
@@ -9,7 +8,7 @@ namespace DotMaps.Pathfinding
 
         public static List<Connection> FindShortestPathTime(Graph graph, Node start, Node finish)
         {
-            Graph calculated = FindShortestPathTime(graph, finish);
+            CalculateGraphTime(graph, finish);
 
             List<Connection> path = new List<Connection>();
             Node current = start;
@@ -28,7 +27,7 @@ namespace DotMaps.Pathfinding
             return path;
         }
 
-        public static Graph FindShortestPathTime(Graph graph, Node finish)
+        public static Graph CalculateGraphTime(Graph graph, Node finish)
         {
             foreach (Node node in graph.nodes.Values)
             {
@@ -55,7 +54,7 @@ namespace DotMaps.Pathfinding
 
         public static List<Connection> FindShortestPathDistance(Graph graph, Node start, Node finish)
         {
-            Graph calculated = FindShortestPathDistance(graph, finish);
+            CalculateGraphDistance(graph, finish);
 
             List<Connection> path = new List<Connection>();
             Node current = start;
@@ -74,7 +73,7 @@ namespace DotMaps.Pathfinding
             return path;
         }
 
-        public static Graph FindShortestPathDistance(Graph graph, Node finish)
+        public static Graph CalculateGraphDistance(Graph graph, Node finish)
         {
             foreach (Node node in graph.nodes.Values)
             {
