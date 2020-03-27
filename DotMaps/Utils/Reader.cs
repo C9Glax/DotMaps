@@ -61,7 +61,7 @@ namespace DotMaps.Utils
                                 break;
                             case "tag":
                                 string key = reader.GetAttribute("k");
-                                if (key.StartsWith("addr:") || key == "building" || key == "highway")
+                                if (key.StartsWith("addr:") || key == "building" || key=="ref" || key == "highway" || key == "name" || key == "maxspeed" || key == "oneway")
                                     currentWay.tags.Add(key, reader.GetAttribute("v"));
                                 break;
                         }
@@ -73,12 +73,23 @@ namespace DotMaps.Utils
             return bounds;
         }
 
-        public static Graph ReadNodesIntoGraph(Hashtable nodes)
+        public static string ReadCalculatedXML(string path, ref Hashtable Nodes, ref List<Way> ways, ref List<Address> addresses)
         {
-            Graph map = new Graph();
-            foreach (Node node in nodes.Values)
-                map.nodes.Add(node.id, node);
-            return map;
+            string bounds = "";
+
+            XmlReaderSettings settings = new XmlReaderSettings();
+            settings.IgnoreWhitespace = true;
+            XmlReader reader = XmlReader.Create(path, settings);
+
+            while (reader.Read())
+            {
+                if (reader.NodeType != XmlNodeType.EndElement)
+                {
+                    //HERE
+                }
+            }
+
+            return bounds;
         }
     }
 }

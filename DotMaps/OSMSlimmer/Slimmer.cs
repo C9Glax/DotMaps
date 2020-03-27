@@ -8,7 +8,7 @@ namespace DotMaps
 {
     public class Slimmer
     {
-        public static void Slim(string path)
+        public static void SlimOSMFormat(string path)
         {
             Hashtable nodes = new Hashtable();
             List<Way> ways = new List<Way>();
@@ -32,14 +32,19 @@ namespace DotMaps
 
             string newPath = path.Substring(0, path.Length - 4) + "_slim.osm";
             Writer.WriteOSMXml(newPath, bounds, neededNodes, ways);
-        } 
+        }
+
+        public static void SlimFormat(string path)
+        {
+
+        }
 
         public static List<Address> CalculateAddresses(string path)
         {
             Hashtable nodes = new Hashtable();
             List<Way> ways = new List<Way>();
             string bounds = Reader.ReadOSMXml(path, ref nodes, ref ways);
-            Graph graph = Reader.ReadNodesIntoGraph(nodes);
+            Graph graph = Importer.ReadNodesIntoNewGraph(nodes);
             List<Address> addresses = new List<Address>();
 
             foreach (Way way in ways)
@@ -65,8 +70,8 @@ namespace DotMaps
             float maxLat = Convert.ToSingle(bounds.Substring(bounds.IndexOf("maxlat") + 8, bounds.IndexOf('"', bounds.IndexOf("maxlat") + 9) - bounds.IndexOf("maxlat") - 8).Replace('.', ','));
             float maxLon = Convert.ToSingle(bounds.Substring(bounds.IndexOf("maxlon") + 8, bounds.IndexOf('"', bounds.IndexOf("maxlon") + 9) - bounds.IndexOf("maxlon") - 8).Replace('.', ','));
 
-            double latDiff = CalculateDistanceBetweenCoordinates(minLat, minLon, maxLat, minLon);
-            double lonDiff = CalculateDistanceBetweenCoordinates(minLat, minLon, minLat, maxLon);
+            double latDiff = Functions.CalculateDistanceBetweenCoordinates(minLat, minLon, maxLat, minLon);
+            double lonDiff = Functions.CalculateDistanceBetweenCoordinates(minLat, minLon, minLat, maxLon);
 
             List<Node>[,] grid = new List<Node>[(int)Math.Ceiling(lonDiff)+1, (int)Math.Ceiling(latDiff)+1];
             for (int px = 0; px < grid.GetLength(0); px++)
@@ -76,8 +81,8 @@ namespace DotMaps
             int nodeX, nodeY;
             foreach (Node node in graph.nodes.Values)
             {
-                nodeX = (int)Math.Floor(CalculateDistanceBetweenCoordinates(minLat, minLon, minLat, node.lon));
-                nodeY = (int)Math.Floor(CalculateDistanceBetweenCoordinates(minLat, minLon, node.lat, minLon));
+                nodeX = (int)Math.Floor(Functions.CalculateDistanceBetweenCoordinates(minLat, minLon, minLat, node.lon));
+                nodeY = (int)Math.Floor(Functions.CalculateDistanceBetweenCoordinates(minLat, minLon, node.lat, minLon));
                 grid[nodeX, nodeY].Add(node);
             }
 
@@ -87,8 +92,8 @@ namespace DotMaps
             List<Node> search;
             foreach (Address address in addresses)
             {
-                addressX = (int)Math.Ceiling(CalculateDistanceBetweenCoordinates(minLat, minLon, minLat, address.lon));
-                addressY = (int)Math.Ceiling(CalculateDistanceBetweenCoordinates(minLat, minLon, address.lat, minLon));
+                addressX = (int)Math.Ceiling(Functions.CalculateDistanceBetweenCoordinates(minLat, minLon, minLat, address.lon));
+                addressY = (int)Math.Ceiling(Functions.CalculateDistanceBetweenCoordinates(minLat, minLon, address.lat, minLon));
 
                 shortestDistance = float.MaxValue;
 
@@ -99,7 +104,7 @@ namespace DotMaps
 
                 foreach (Node testNode in search)
                 {
-                    testDistance = CalculateDistanceBetweenCoordinates(address.lat, address.lon, testNode.lat, testNode.lon);
+                    testDistance = Functions.CalculateDistanceBetweenCoordinates(address.lat, address.lon, testNode.lat, testNode.lon);
                     if (testDistance < shortestDistance)
                     {
                         shortestDistance = testDistance;
@@ -113,29 +118,6 @@ namespace DotMaps
             return addresses;
         }
 
-        private static float CalculateDistanceBetweenCoordinates(float lat1, float lon1, float lat2, float lon2)
-        {
-            int earthRadius = 6371;
-            float differenceLat = DegreesToRadians(lat2 - lat1);
-            float differenceLon = DegreesToRadians(lon2 - lon1);
-
-            float lat1Rads = DegreesToRadians(lat1);
-            float lat2Rads = DegreesToRadians(lat2);
-
-            double a = Math.Sin(differenceLat / 2) * Math.Sin(differenceLat / 2) + Math.Sin(differenceLon / 2) * Math.Sin(differenceLon / 2) * Math.Cos(lat1Rads) * Math.Cos(lat2Rads);
-            double c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
-
-            return Convert.ToSingle(earthRadius * c);
-        }
-
-        private static float DegreesToRadians(float degrees)
-        {
-            return degrees * Convert.ToSingle(Math.PI) / 180;
-        }
-
-        public static void Main(string[] args)
-        {
-            Slimmer.Slim(@"C:\Users\Jann\Desktop\ersdorf.osm");
-        }
+        
     }
 }
