@@ -10,12 +10,15 @@ namespace DotMaps.Datastructures
         public float timeNeeded { get; }
         public Node neighbor { get; }
         public string type { get; }
-        public Connection(double distance, float timeNeeded, Node neighbor, string type)
+        public string name { get; }
+
+        public Connection(double distance, float timeNeeded, Node neighbor, string type, string name)
         {
             this.distance = distance;
             this.timeNeeded = timeNeeded;
             this.neighbor = neighbor;
             this.type = type;
+            this.name = name;
         }
     }
 }
