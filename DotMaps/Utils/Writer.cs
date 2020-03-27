@@ -38,7 +38,15 @@ namespace DotMaps.Utils
                 writer.WriteLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
                 writer.WriteLine("<slim version=\"0.1\" generator=\"OSMSlimmer\">");
                 writer.WriteLine(bounds);
-                    //HERE
+                foreach (Node node in graph.nodes.Values)
+                {
+                    writer.WriteLine("  <node id=\"" + node.id + "\" lat=\"" + node.lat + "\" lon=\"" + node.lon + "\" />");
+                    foreach (Connection connection in node.GetConnections())
+                        writer.WriteLine("    <connection neighbor=\"" + connection.neighbor + "\" distance=\"" + connection.distance + "\" timeNeeded=\"" + connection.timeNeeded + "\" name=\"" + connection.name + "\" type=\"" + connection.type + "\" />");
+                    writer.WriteLine("  </node>");
+                }
+                foreach (Address address in addresses)
+                    writer.WriteLine("  <address nodeId=\"" + address.assosciatedNode + "\" country=\"" + address.country + "\" postcode=\"" + address.postcode + "\" cityname=\"" + address.cityname + "\" street=\"" + address.steetname + "\" housenumber=\"" + address.housenumber + "\" lat=\"" + address.lat + "\" lon=\"" + address.lon + "\" />");
                 writer.WriteLine("</slim>");
                 writer.Close();
             }
