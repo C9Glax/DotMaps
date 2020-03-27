@@ -23,5 +23,13 @@ namespace DotMaps.Utils
         {
             return degrees * Convert.ToSingle(Math.PI) / 180;
         }
+
+        public static double AngleBetweenCoordinates(float lat1, float lon1, float lat2, float lon2)
+        {
+            float dy = lat2 - lat1;
+            double dx = Math.Cos(Math.PI / 180 * lat1) * (lon2 - lon1);
+            double angle = Math.Atan2(dy, dx);
+            return angle;
+        }
     }
 }
