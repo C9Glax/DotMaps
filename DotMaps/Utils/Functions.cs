@@ -26,10 +26,22 @@ namespace DotMaps.Utils
 
         public static double AngleBetweenCoordinates(float lat1, float lon1, float lat2, float lon2)
         {
-            float dy = lat2 - lat1;
-            double dx = Math.Cos(Math.PI / 180 * lat1) * (lon2 - lon1);
-            double angle = Math.Atan2(dy, dx);
+            lat1 = DegreesToRadians(lat1);
+            lon1 = DegreesToRadians(lon1);
+            lat2 = DegreesToRadians(lat2);
+            lon2 = DegreesToRadians(lon2);
+
+            var y = Math.Sin(lon2 - lon1) * Math.Cos(lat2);
+            var x = Math.Cos(lat1) * Math.Sin(lat2) -
+                    Math.Sin(lat1) * Math.Cos(lat2) * Math.Cos(lon2 - lon1);
+            var angle = Math.Atan2(y, x);
+
             return angle;
+        }
+
+        public static double RadiansToDegrees(double Radians)
+        {
+            return Radians * 180 / Math.PI;
         }
     }
 }
