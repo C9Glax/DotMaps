@@ -27,6 +27,8 @@ namespace DotMaps
             CreateTilesFromGraph(Console.ReadLine(), graph);
         }
 
+        const int resolution = 1000;
+
         public static void CreateTilesFromGraph(string path, Graph graph)
         {
             Hashtable visible = new Hashtable();
@@ -35,33 +37,36 @@ namespace DotMaps
             Hashtable colors = new Hashtable();
             foreach (string type in File.ReadAllLines("visible.txt"))
             {
-                if (!visible.ContainsKey(type.Split(',')[0]))
+                if (!colors.ContainsKey(type.Split(',')[0]))
                 {
                     switch ((string)type.Split(',')[2])
                     {
                         case "Red":
-                            visible.Add(type.Split(',')[0], new Pen(Color.Red, 5));
+                            colors.Add(type.Split(',')[0], new Pen(Color.Red, 5));
                             break;
                         case "Orange":
-                            visible.Add(type.Split(',')[0], new Pen(Color.Orange, 5));
+                            colors.Add(type.Split(',')[0], new Pen(Color.Orange, 5));
                             break;
                         case "White":
-                            visible.Add(type.Split(',')[0], new Pen(Color.White, 5));
+                            colors.Add(type.Split(',')[0], new Pen(Color.White, 5));
                             break;
                         case "Gray":
-                            visible.Add(type.Split(',')[0], new Pen(Color.Gray, 5));
+                            colors.Add(type.Split(',')[0], new Pen(Color.Gray, 5));
                             break;
                         case "Yellow":
-                            visible.Add(type.Split(',')[0], new Pen(Color.Yellow, 5));
+                            colors.Add(type.Split(',')[0], new Pen(Color.Yellow, 5));
                             break;
                         case "Green":
-                            visible.Add(type.Split(',')[0], new Pen(Color.Green, 5));
+                            colors.Add(type.Split(',')[0], new Pen(Color.Green, 5));
                             break;
                         case "Blue":
-                            visible.Add(type.Split(',')[0], new Pen(Color.Blue, 5));
+                            colors.Add(type.Split(',')[0], new Pen(Color.Blue, 5));
+                            break;
+                        case "LightBlue":
+                            colors.Add(type.Split(',')[0], new Pen(Color.LightBlue, 5));
                             break;
                         default:
-                            visible.Add(type.Split(',')[0], new Pen(Color.Black, 5));
+                            colors.Add(type.Split(',')[0], new Pen(Color.Black, 5));
                             break;
                     }
                 }
@@ -69,7 +74,7 @@ namespace DotMaps
             }
                 
 
-            float minLat = float.MaxValue, minLon = float.MaxValue, maxLat = float.MinValue, maxLon = float.MinValue, lonDiff, latDiff;
+            float minLat = float.MaxValue, minLon = float.MaxValue, maxLat = float.MinValue, maxLon = float.MinValue;
             foreach (Node node in graph.nodes.Values)
             {
                 minLat = node.lat < minLat ? node.lat : minLat;
@@ -78,36 +83,45 @@ namespace DotMaps
                 maxLon = node.lon > maxLon ? node.lon : maxLon;
             }
 
-            for (byte level = 7; level >= 0; level--)
+            for (byte level = 7; level > 0; level--)
             {
+                Directory.CreateDirectory(@path + "\\" + level);
                 List<Node>[,] tiles = CreateGrid(graph, level);
                 for (int x = 0; x < tiles.GetLength(0); x++)
                 {
-                    Directory.CreateDirectory(@path + "\\" + x);
+                    Directory.CreateDirectory(@path + "\\" + level + "\\" + x);
                     for (int y = 0; y < tiles.GetLength(1); y++)
                     {
-                    Directory.CreateDirectory(@path + "\\" + x + "\\" + y);
-                        using (Bitmap bmp = new Bitmap(1000 * level, 1000 * level))
+                        List<Node> draw = new List<Node>();
+                        for(int px = (x < 1) ? 0 : x - 1; px < x + 1 && px < tiles.GetLength(0); px++)
+                            for (int py = (y < 1) ? 0 : y - 1; py < y + 1 && py < tiles.GetLength(1); py++)
+                                draw.AddRange(tiles[px, py]);
+                        using (Bitmap bmp = new Bitmap(resolution * level, resolution * level))
                         {
                             using (Graphics graphics = Graphics.FromImage(bmp))
                             {
-                                foreach (Node node in tiles[x, y])
+                                foreach (Node node in draw)
                                 {
                                     foreach (Connection connection in node.GetConnections())
                                     {
-                                        if (connection.type != null && (byte)visible[connection.type] <= level)
+                                        if (connection.type != null)// && visible.ContainsKey(connection.type) && (byte)visible[connection.type] >= level)
                                         {
-                                            float pixelX = (Functions.CalculateDistanceBetweenCoordinates(minLat, minLon, minLat, node.lon) - x) * 1000;
-                                            float pixelY = (Functions.CalculateDistanceBetweenCoordinates(minLat, minLon, node.lat, minLon) - y) * 1000;
+                                            float pixel1X = (Functions.CalculateDistanceBetweenCoordinates(minLat, minLon, minLat, node.lon) - x) * resolution;
+                                            float pixel1Y = (Functions.CalculateDistanceBetweenCoordinates(minLat, minLon, node.lat, minLon) - y) * resolution;
                                             double angle = Functions.AngleBetweenCoordinates(node.lat, node.lon, connection.neighbor.lat, connection.neighbor.lon);
-                                            double distance = connection.distance;
+                                            double distance = connection.distance * resolution;
+                                            float pixel2X = (float)(Math.Sin(angle) * distance + pixel1X);
+                                            float pixel2Y = (float)(Math.Cos(angle) * distance + pixel1Y);
+
                                             Pen pen = (Pen)colors[connection.type];
-                                            graphics.DrawLine(pen, pixelX, pixelY, (float)(Math.Sin(angle) * distance), (float)(Math.Cos(angle) * distance));
+                                            if (pen == null)
+                                                pen = new Pen(Color.Green, 5);
+                                            graphics.DrawLine(pen, pixel1X, resolution * level - pixel1Y, pixel2X, resolution * level - pixel2Y);
                                         }
                                     }
                                 }
                             }
-                            bmp.Save(@path + "\\" + x + "\\" + y + "\\" + level + ".png", ImageFormat.Png);
+                            bmp.Save(@path + "\\" + level + "\\" + x + "\\" + y + ".png", ImageFormat.Png);
                         }
                     }
                 }
@@ -126,8 +140,8 @@ namespace DotMaps
                 maxLat = node.lat > maxLat ? node.lat : maxLat;
                 maxLon = node.lon > maxLon ? node.lon : maxLon;
             }
-            lonDiff = maxLon - minLon;
-            latDiff = maxLat - minLat;
+            latDiff = Functions.CalculateDistanceBetweenCoordinates(minLat, minLon, maxLat, minLon);
+            lonDiff = Functions.CalculateDistanceBetweenCoordinates(minLat, minLon, minLat, maxLon);
 
             int amountX = (int)Math.Ceiling(lonDiff / size);
             int amountY = (int)Math.Ceiling(latDiff / size);
