@@ -6,12 +6,12 @@ namespace DotMaps.Pathfinding
     public class Dijkstra
     {
 
-        public static List<Connection> FindShortestPathTime(Graph graph, Node start, Node finish)
+        public static List<Connection> FindShortestPathTime(Graph graph, _3DNode start, _3DNode finish)
         {
             CalculateGraphTime(graph, finish);
 
             List<Connection> path = new List<Connection>();
-            Node current = start;
+            _3DNode current = start;
             while (current != finish)
             {
                 foreach (Connection connection in current.previousNode.GetConnections())
@@ -27,9 +27,9 @@ namespace DotMaps.Pathfinding
             return path;
         }
 
-        public static Graph CalculateGraphTime(Graph graph, Node finish)
+        public static Graph CalculateGraphTime(Graph graph, _3DNode finish)
         {
-            foreach (Node node in graph.nodes.Values)
+            foreach (_3DNode node in graph.nodes.Values)
             {
                 node.previousNode = null;
                 node.timeRequired = double.MaxValue;
@@ -39,7 +39,7 @@ namespace DotMaps.Pathfinding
             return graph;
         }
 
-        private static void DijkstraTime(ref Graph graph, Node current)
+        private static void DijkstraTime(ref Graph graph, _3DNode current)
         {
             foreach (Connection connection in current.GetConnections())
             {
@@ -52,12 +52,12 @@ namespace DotMaps.Pathfinding
             }
         }
 
-        public static List<Node> FindShortestPathDistance(Graph graph, Node start, Node finish)
+        public static List<_3DNode> FindShortestPathDistance(Graph graph, _3DNode start, _3DNode finish)
         {
             CalculateGraphDistance(graph, finish);
 
-            List<Node> path = new List<Node>();
-            Node current = start;
+            List<_3DNode> path = new List<_3DNode>();
+            _3DNode current = start;
             while(current != finish)
             {
                 path.Add(current);
@@ -67,9 +67,9 @@ namespace DotMaps.Pathfinding
             return path;
         }
 
-        public static Graph CalculateGraphDistance(Graph graph, Node finish)
+        public static Graph CalculateGraphDistance(Graph graph, _3DNode finish)
         {
-            foreach (Node node in graph.nodes.Values)
+            foreach (_3DNode node in graph.nodes.Values)
             {
                 node.previousNode = null;
                 node.timeRequired = double.MaxValue;
@@ -79,7 +79,7 @@ namespace DotMaps.Pathfinding
             return graph;
         }
 
-        private static void DijkstraDistance(ref Graph graph, Node current)
+        private static void DijkstraDistance(ref Graph graph, _3DNode current)
         {
             foreach (Connection connection in current.GetConnections())
             {
