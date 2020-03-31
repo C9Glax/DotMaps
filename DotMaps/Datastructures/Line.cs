@@ -1,17 +1,18 @@
-﻿
+﻿using System.Drawing;
+
 namespace DotMaps.Datastructures
 {
-    public class Line
+    public struct Line
     {
-        public float startLat, startLon, finishLat, finishLon;
-        public System.Drawing.Color color;
+        public float startX, startY, finishX, finishY;
+        public Color color;
         public float width;
-        public Line(float startLat, float startLon, float finishLat, float finishLon, System.Drawing.Color color, float width)
+        public Line(float startX, float startY, float finishX, float finishY, Color color, float width)
         {
-            this.startLat = startLat;
-            this.startLon = startLon;
-            this.finishLat = finishLat;
-            this.finishLon = finishLon;
+            this.startX = startX;
+            this.startY = startY;
+            this.finishX = finishX;
+            this.finishY = finishY;
             this.color = color;
             this.width = width;
         }

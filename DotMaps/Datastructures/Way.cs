@@ -4,7 +4,7 @@ using System.Collections;
 
 namespace DotMaps.Datastructures
 {
-    public class Way
+    public struct Way
     {
         public UInt64 id;
         public List<_3DNode> nodes { get; }

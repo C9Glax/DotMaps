@@ -1,10 +1,8 @@
-﻿using System;
-
-namespace DotMaps.Datastructures
+﻿namespace DotMaps.Datastructures
 {
-    public class Address
+    public struct Address
     {
-        public UInt64 assosciatedNode { get; set; }
+        public ulong assosciatedNode { get; set; }
         public string cityname { get; }
         public string postcode { get; }
         public string steetname { get; }
@@ -21,9 +19,10 @@ namespace DotMaps.Datastructures
             this.country = country;
             this.lat = lat;
             this.lon = lon;
+            this.assosciatedNode = 0;
         }
 
-        public Address(string country, string postcode, string cityname, string streetname, string housenumber, float lat, float lon, UInt64 node)
+        public Address(string country, string postcode, string cityname, string streetname, string housenumber, float lat, float lon, ulong node)
         {
             this.steetname = streetname;
             this.housenumber = housenumber;

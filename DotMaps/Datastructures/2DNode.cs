@@ -1,13 +1,12 @@
-﻿using System;
-
-namespace DotMaps.Datastructures
+﻿namespace DotMaps.Datastructures
 {
-    public class _2DNode
+    public struct _2DNode
     {
-        public float coordinateX, coordinateY;
-        public UInt64 id;
+        public float coordinateX { get; }
+        public float coordinateY { get; }
+        public ulong id;
 
-        public _2DNode(UInt64 id, float coordinateX, float coordinateY)
+        public _2DNode(ulong id, float coordinateX, float coordinateY)
         {
             this.coordinateX = coordinateX;
             this.coordinateY = coordinateY;
