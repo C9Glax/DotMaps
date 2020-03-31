@@ -1,39 +1,23 @@
 ﻿using System;
-using System.IO;
 using System.Collections.Generic;
 using System.Collections;
+using System.Xml;
 using DotMaps.Datastructures;
 using DotMaps.Utils;
 using System.Drawing;
-using System.Drawing.Imaging;
+using System.IO;
 
 namespace DotMaps
 {
-    class TileDrawer
+    public class TileDrawer
     {
-
-        public TileDrawer()
+        static void Main(string[] args)
         {
-            Console.WriteLine("Path to .osm file");
-            Hashtable nodes = new Hashtable();
-            List<Way> ways = new List<Way>();
-            Console.WriteLine("Reading .osm");
-            Reader.ReadOSMXml(Console.ReadLine(), ref nodes, ref ways);
-            Console.WriteLine("Importing nodes");
-            Graph graph = Importer.ReadNodesIntoNewGraph(nodes);
-            Console.WriteLine("Importing ways");
-            Importer.ReadWaysIntoGraph(ways, ref graph);
-            Console.WriteLine("Path to save tiles:");
-            CreateTilesFromGraph(Console.ReadLine(), graph);
+            TileDrawer.CreateTiles(@"D:\Jann\Downloads\koeln_slim.osm", @"C:\Users\Jann\Desktop\test");
         }
 
-        const int resolution = 1000;
-
-        public static void CreateTilesFromGraph(string path, Graph graph)
+        public static void CreateTiles(string path, string newPath)
         {
-            Hashtable visible = new Hashtable();
-            foreach (string type in File.ReadAllLines("visible.txt"))
-                visible.Add(type.Split(',')[0], Convert.ToByte(type.Split(',')[1]));
             Hashtable colors = new Hashtable();
             foreach (string type in File.ReadAllLines("visible.txt"))
             {
@@ -42,129 +26,152 @@ namespace DotMaps
                     switch ((string)type.Split(',')[2])
                     {
                         case "Red":
-                            colors.Add(type.Split(',')[0], new Pen(Color.Red, 5));
+                            colors.Add(type.Split(',')[0], Color.Red);
                             break;
                         case "Orange":
-                            colors.Add(type.Split(',')[0], new Pen(Color.Orange, 5));
+                            colors.Add(type.Split(',')[0], Color.Orange);
                             break;
                         case "White":
-                            colors.Add(type.Split(',')[0], new Pen(Color.White, 5));
+                            colors.Add(type.Split(',')[0], Color.White);
                             break;
                         case "Gray":
-                            colors.Add(type.Split(',')[0], new Pen(Color.Gray, 5));
+                            colors.Add(type.Split(',')[0], Color.Gray);
                             break;
                         case "Yellow":
-                            colors.Add(type.Split(',')[0], new Pen(Color.Yellow, 5));
+                            colors.Add(type.Split(',')[0], Color.Yellow);
                             break;
                         case "Green":
-                            colors.Add(type.Split(',')[0], new Pen(Color.Green, 5));
+                            colors.Add(type.Split(',')[0], Color.Green);
                             break;
                         case "Blue":
-                            colors.Add(type.Split(',')[0], new Pen(Color.Blue, 5));
+                            colors.Add(type.Split(',')[0], Color.Blue);
                             break;
                         case "LightBlue":
-                            colors.Add(type.Split(',')[0], new Pen(Color.LightBlue, 5));
+                            colors.Add(type.Split(',')[0], Color.LightBlue);
                             break;
                         default:
-                            colors.Add(type.Split(',')[0], new Pen(Color.Black, 5));
+                            colors.Add(type.Split(',')[0], Color.Black);
                             break;
                     }
                 }
-                
-            }
-                
-
-            float minLat = float.MaxValue, minLon = float.MaxValue, maxLat = float.MinValue, maxLon = float.MinValue;
-            foreach (Node node in graph.nodes.Values)
-            {
-                minLat = node.lat < minLat ? node.lat : minLat;
-                minLon = node.lon < minLon ? node.lon : minLon;
-                maxLat = node.lat > maxLat ? node.lat : maxLat;
-                maxLon = node.lon > maxLon ? node.lon : maxLon;
             }
 
-            for (byte level = 7; level > 0; level--)
+            Hashtable _3dnodes = new Hashtable();
+            float minLat = float.MaxValue, maxLat = float.MinValue, minLon = float.MaxValue, maxLon = float.MinValue;
+
+            StreamReader stream = new StreamReader(path, System.Text.Encoding.UTF8);
+            XmlReaderSettings settings = new XmlReaderSettings();
+            settings.IgnoreWhitespace = true;
+            using (XmlReader reader = XmlReader.Create(stream, settings))
             {
-                Directory.CreateDirectory(@path + "\\" + level);
-                List<Node>[,] tiles = CreateGrid(graph, level);
-                for (int x = 0; x < tiles.GetLength(0); x++)
+                while (reader.Read())
                 {
-                    Directory.CreateDirectory(@path + "\\" + level + "\\" + x);
-                    for (int y = 0; y < tiles.GetLength(1); y++)
+                    if (reader.NodeType != XmlNodeType.EndElement && reader.Depth == 1 && reader.Name == "node")
                     {
-                        List<Node> draw = new List<Node>();
-                        for(int px = (x < 1) ? 0 : x - 1; px < x + 1 && px < tiles.GetLength(0); px++)
-                            for (int py = (y < 1) ? 0 : y - 1; py < y + 1 && py < tiles.GetLength(1); py++)
-                                draw.AddRange(tiles[px, py]);
-                        using (Bitmap bmp = new Bitmap(resolution * level, resolution * level))
-                        {
-                            using (Graphics graphics = Graphics.FromImage(bmp))
-                            {
-                                foreach (Node node in draw)
-                                {
-                                    foreach (Connection connection in node.GetConnections())
-                                    {
-                                        if (connection.type != null)// && visible.ContainsKey(connection.type) && (byte)visible[connection.type] >= level)
-                                        {
-                                            float pixel1X = (Functions.CalculateDistanceBetweenCoordinates(minLat, minLon, minLat, node.lon) - x) * resolution;
-                                            float pixel1Y = (Functions.CalculateDistanceBetweenCoordinates(minLat, minLon, node.lat, minLon) - y) * resolution;
-                                            double angle = Functions.AngleBetweenCoordinates(node.lat, node.lon, connection.neighbor.lat, connection.neighbor.lon);
-                                            double distance = connection.distance * resolution;
-                                            float pixel2X = (float)(Math.Sin(angle) * distance + pixel1X);
-                                            float pixel2Y = (float)(Math.Cos(angle) * distance + pixel1Y);
+                        UInt64 id = Convert.ToUInt64(reader.GetAttribute("id"));
+                        float lat = Convert.ToSingle(reader.GetAttribute("lat").Replace('.', ','));
+                        float lon = Convert.ToSingle(reader.GetAttribute("lon").Replace('.', ','));
+                        _3dnodes.Add(id, new _3DNode(id, lat, lon));
+                        minLat = lat < minLat ? lat : minLat;
+                        minLon = lon < minLon ? lon : minLon;
+                        maxLat = lat > maxLat ? lat : maxLat;
+                        maxLon = lon > maxLon ? lon : maxLon;
+                    }
+                }
+                reader.Close();
+                stream.Close();
+            }
+            _3DNode center = new _3DNode(0, maxLat - minLat, maxLon - minLon);
 
-                                            Pen pen = (Pen)colors[connection.type];
-                                            if (pen == null)
-                                                pen = new Pen(Color.Green, 5);
-                                            graphics.DrawLine(pen, pixel1X, resolution * level - pixel1Y, pixel2X, resolution * level - pixel2Y);
+
+            float minY = float.MaxValue, maxY = float.MinValue, minX = float.MaxValue, maxX = float.MinValue;
+            Hashtable _2dnodes = new Hashtable();
+            foreach(_3DNode _3dnode in _3dnodes.Values)
+            {
+                _2DNode newNode = Functions._2DNodeFrom3DNode(_3dnode, center, 5);
+                _2dnodes.Add(newNode.id, newNode);
+                minY = newNode.coordinateY < minY ? newNode.coordinateY : minY;
+                minX = newNode.coordinateX < minX ? newNode.coordinateX : minX;
+                maxY = newNode.coordinateY > maxY ? newNode.coordinateY : maxY;
+                maxX = newNode.coordinateX > maxX ? newNode.coordinateX : maxX;
+            }
+            int width = (int)(maxX - minX + 1);
+            int height = (int)(maxY - minY + 1);
+
+            Console.WriteLine("{0:F}\t^", maxY);
+            Console.WriteLine("       \t|");
+            Console.WriteLine("{0:F}\t|", height);
+            Console.WriteLine("       \t|");
+            Console.WriteLine("{0:F}\t+---------------->", minY);
+            Console.WriteLine("    {0:F}<-{2:F}->{1:F}", minX, maxX, width);
+            
+
+            using (Bitmap bmp = new Bitmap(width, height))
+            {
+                using(Graphics g = Graphics.FromImage(bmp))
+                {
+                    const byte UNKNOWN = 0, NODE = 1, WAY = 2, RELATION = 3, READING = 1, DONE = 0;
+                    byte nodeType = UNKNOWN, state = DONE;
+                    List<_2DNode> currentNodes = new List<_2DNode>();
+                    Way currentWay = new Way(0);
+                    stream = new StreamReader(path, System.Text.Encoding.UTF8);
+                    using (XmlReader reader = XmlReader.Create(stream, settings))
+                    {
+                        while (reader.Read())
+                        {
+                            if (reader.NodeType != XmlNodeType.EndElement)
+                            {
+                                if (reader.Depth == 1)
+                                {
+                                    if (state == READING && nodeType == WAY && currentWay.tags.ContainsKey("highway"))
+                                    {
+                                        Pen pen = new Pen((Color)colors[(string)currentWay.tags["highway"]], 1);
+                                        state = DONE;
+                                        _2DNode[] nodes = currentNodes.ToArray();
+                                        for(int i = 1; i < nodes.Length; i++)
+                                        {
+                                            g.DrawLine(pen, nodes[i - 1].coordinateX - minX, nodes[i - 1].coordinateY - minY, nodes[i].coordinateX - minX, nodes[i].coordinateY - minY);
                                         }
+                                    }
+                                    switch (reader.Name)
+                                    {
+                                        case "node":
+                                            nodeType = NODE;
+                                            break;
+                                        case "way":
+                                            currentNodes = new List<_2DNode>();
+                                            currentWay = new Way(Convert.ToUInt64(reader.GetAttribute("id")));
+                                            nodeType = WAY;
+                                            break;
+                                        default:
+                                            nodeType = UNKNOWN;
+                                            break;
+                                    }
+                                }
+                                else if (reader.Depth == 2 && nodeType == WAY)
+                                {
+                                    state = READING;
+                                    switch (reader.Name)
+                                    {
+                                        case "nd":
+                                            UInt64 id = Convert.ToUInt64(reader.GetAttribute("ref"));
+                                            currentNodes.Add((_2DNode)_2dnodes[id]);
+                                            break;
+                                        case "tag":
+                                            string key = reader.GetAttribute("k");
+                                            currentWay.tags.Add(key, reader.GetAttribute("v"));
+                                            if (key == "highway" && !colors.ContainsKey(reader.GetAttribute("v")))
+                                                colors.Add(reader.GetAttribute("v"), Color.Black);
+                                            break;
                                     }
                                 }
                             }
-                            bmp.Save(@path + "\\" + level + "\\" + x + "\\" + y + ".png", ImageFormat.Png);
                         }
+                        reader.Close();
                     }
                 }
+                bmp.Save(newPath + ".png", System.Drawing.Imaging.ImageFormat.Png);
             }
-                
-        }
-
-        private static List<Node>[,] CreateGrid(Graph graph, int size)
-        {
-            float minLat = float.MaxValue, minLon = float.MaxValue, maxLat = float.MinValue, maxLon = float.MinValue, lonDiff, latDiff;
-
-            foreach(Node node in graph.nodes.Values)
-            {
-                minLat = node.lat < minLat ? node.lat : minLat;
-                minLon = node.lon < minLon ? node.lon : minLon;
-                maxLat = node.lat > maxLat ? node.lat : maxLat;
-                maxLon = node.lon > maxLon ? node.lon : maxLon;
-            }
-            latDiff = Functions.CalculateDistanceBetweenCoordinates(minLat, minLon, maxLat, minLon);
-            lonDiff = Functions.CalculateDistanceBetweenCoordinates(minLat, minLon, minLat, maxLon);
-
-            int amountX = (int)Math.Ceiling(lonDiff / size);
-            int amountY = (int)Math.Ceiling(latDiff / size);
-
-            List<Node>[,] grid = new List<Node>[amountX, amountY];
-            for (int px = 0; px < grid.GetLength(0); px++)
-                for (int py = 0; py < grid.GetLength(1); py++)
-                    grid[px, py] = new List<Node>();
-
-            int nodeX, nodeY;
-            foreach (Node node in graph.nodes.Values)
-            {
-                nodeX = (int)Math.Floor(Functions.CalculateDistanceBetweenCoordinates(minLat, minLon, minLat, node.lon) / size);
-                nodeY = (int)Math.Floor(Functions.CalculateDistanceBetweenCoordinates(minLat, minLon, node.lat, minLon) / size);
-                grid[nodeX, nodeY].Add(node);
-            }
-
-            return grid;
-        }
-
-        static void Main(string[] args)
-        {
-            new TileDrawer();
         }
     }
 }
