@@ -13,7 +13,12 @@ namespace DotMaps
     {
         static void Main(string[] args)
         {
-            TileDrawer.CreateTiles(@"D:\Jann\Downloads\koeln_slim.osm", @"C:\Users\Jann\Desktop\test");
+            Console.WriteLine(".osm File to read");
+            string path = Console.ReadLine();
+            Console.WriteLine("output path");
+            string newPath = Console.ReadLine();
+            TileDrawer.CreateTiles(path, newPath);
+            //TileDrawer.CreateTiles(@"D:\Jann\Downloads\koeln_slim.osm", @"C:\Users\Jann\Desktop\test");
         }
 
         public static void CreateTiles(string path, string newPath)
@@ -110,7 +115,7 @@ namespace DotMaps
             {
                 using(Graphics g = Graphics.FromImage(bmp))
                 {
-                    const byte UNKNOWN = 0, NODE = 1, WAY = 2, RELATION = 3, READING = 1, DONE = 0;
+                    const byte UNKNOWN = 0, NODE = 1, WAY = 2, READING = 1, DONE = 0;
                     byte nodeType = UNKNOWN, state = DONE;
                     List<_2DNode> currentNodes = new List<_2DNode>();
                     Way currentWay = new Way(0);
