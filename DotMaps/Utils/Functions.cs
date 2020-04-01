@@ -31,7 +31,7 @@ namespace DotMaps.Utils
         }
         public static double RadiansToDegrees(double Radians)
         {
-            return Radians * 180 / Math.PI;
+            return (Radians * 180 / Math.PI + 360) % 360;
         }
 
         public static double AngleBetweenNodes(_3DNode node1, _3DNode node2)
@@ -53,78 +53,42 @@ namespace DotMaps.Utils
             return angle;
         }
 
-        public static _2DNode _2DNodeFrom3DNode(_3DNode node, _3DNode center, int resolution)
+        public static _2DNode _2DNodeFrom3DNode(_3DNode node, _3DNode center, int scale)
         {
-            double ax = earthRadius * Math.Cos(DegreesToRadians(node.lat)) * Math.Cos(DegreesToRadians(node.lon)); //sphere
-            double ay = earthRadius * Math.Cos(DegreesToRadians(node.lat)) * Math.Sin(DegreesToRadians(node.lon)); //sphere
-            double az = earthRadius * Math.Sin(DegreesToRadians(node.lat)); //sphere
+            //Node Position in 3D space
+            double ax = Math.Cos(DegreesToRadians(node.lon)) * Math.Cos(DegreesToRadians(node.lat)) * earthRadius;
+            double ay = Math.Sin(DegreesToRadians(node.lat)) * earthRadius;
+            double az = Math.Sin(DegreesToRadians(node.lon)) * Math.Cos(DegreesToRadians(node.lat)) * earthRadius;
 
-            double cx = 0;// earthRadius * (resolution + 1) * Math.Cos(DegreesToRadians(center.lat)) * Math.Cos(DegreesToRadians(center.lon)); //camera
-            double cy = 0;// earthRadius * (resolution + 1) * Math.Cos(DegreesToRadians(center.lat)) * Math.Sin(DegreesToRadians(center.lon)); //camera
-            double cz = 0;// earthRadius * (resolution + 1) * Math.Sin(DegreesToRadians(center.lat)); //camera
+            //Camera Position
+            double cx = 0;
+            double cy = 0;
+            double cz = 0;
 
-            double ox = 0; //cameraangle
-            double oy = DegreesToRadians(node.lon);//cameraangle
-            double oz = DegreesToRadians(node.lat);//cameraangle
+            //Camera Rotation
+            double ox = DegreesToRadians(-center.lat);
+            double oy = DegreesToRadians(90 - center.lon);
+            double oz = 0; 
 
-            double ex = 0; //screenrelativetopinhole
-            double ey = 0; //screenrelativetopinhole
-            double ez = earthRadius * resolution; //screenrelativetopinhole
+            //Screen Position
+            double ex = 0;
+            double ey = 0;
+            double ez = -(earthRadius * scale+1);
 
             double x = ax - cx;
             double y = ay - cy;
             double z = az - cz;
-
-            double dx = Math.Cos(oy) * (Math.Sin(oz) * y + Math.Cos(oz) * x) - Math.Cos(oy) * z;
-            double dy = Math.Sin(ox) * (Math.Cos(oy) * z + Math.Sin(oy) * (Math.Sin(oy) * y + Math.Cos(oz) * x)) + Math.Cos(ox) * (Math.Cos(oz) * y - Math.Sin(oz) * x);
+            double dx = Math.Cos(oy) * (Math.Sin(oz) * y + Math.Cos(oz) * x) - Math.Sin(oy) * z;
+            double dy = Math.Sin(ox) * (Math.Cos(oy) * z + Math.Sin(oy) * (Math.Sin(oz) * y + Math.Cos(oz) * x)) + Math.Cos(ox) * (Math.Cos(oz) * y - Math.Sin(oz) * x);
             double dz = Math.Cos(ox) * (Math.Cos(oy) * z + Math.Sin(oy) * (Math.Sin(oz) * y + Math.Cos(oz) * x)) - Math.Sin(ox) * (Math.Cos(oz) * y - Math.Sin(oz) * x);
 
-            double bx = ez / dz * dx + ex;
-            double by = ez / dz * dy + ey;
+            //Node Position on Screen
+            double bx = (ez / dz) * dx + ex;
+            double by = (ez / dz) * dy + ey;
+            bx += scale / 2;
+            by += scale / 2;
 
-            return new _2DNode(node.id, (float)-bx, (float)by);
+            return new _2DNode(node.id, (float)bx, (float)by);
         }
-
-
-        /*
-        public static int[] GridFromCoordinates(float lengthCellLateralEdgeClosestToEquator, float startLat, float startLon, float finishLat, float finishLon) {
-            double angle = AngleBetweenCoordinates(startLat, startLon, finishLat, finishLon);
-            double distance = CalculateDistanceBetweenCoordinates(startLat, startLon, finishLat, finishLon);
-            int x = (int)(Math.Sin(angle) * distance / lengthCellLateralEdgeClosestToEquator);
-            int y = (int)-(Math.Cos(angle) * distance / lengthCellLateralEdgeClosestToEquator);
-            return new int[2] { x, y };
-        }
-
-        public static float[] PixelsFromCoordinates(int resolution, float maxLat, float minLon, float nodeLat, float nodeLon)
-        {
-            double angle = AngleBetweenCoordinates(maxLat, minLon, nodeLat, nodeLon);
-            double distance = CalculateDistanceBetweenCoordinates(maxLat, minLon, nodeLat, nodeLon);
-            float pixelX = (float)(Math.Sin(angle) * distance) * resolution/10;
-            float pixelY = (float)-(Math.Cos(angle) * distance) * resolution/10;
-            return new float[2] { pixelX, pixelY };
-        }
-
-        public static float[] GridCellMaxLatMinLon(float lengthCellLateralEdgeClosestToEquator, float gridMinLat, float gridMaxLat, float gridMinLon, int gridX, int gridY)
-        {
-            const float kmAtEquator = 111.699f;
-            float cellMaxLat = gridMaxLat - (lengthCellLateralEdgeClosestToEquator / kmAtEquator) * gridY;
-            float cellMinLon = gridMinLon + (float)Math.Cos(gridMinLat) * (lengthCellLateralEdgeClosestToEquator / kmAtEquator) * gridX;
-            return new float[2] { cellMaxLat, cellMinLon };
-        }
-
-        public static List<Line>[,] EmptyGridFromBounds(float lengthCellLateralEdgeClosestToEquator, float minLat, float maxLat, float minLon, float maxLon)
-        {
-            double width = CalculateDistanceBetweenCoordinates(minLat, minLon, minLat, maxLon);
-            double height = CalculateDistanceBetweenCoordinates(minLat, minLon, maxLat, minLon);
-            int amountX = (int)Math.Ceiling(width / lengthCellLateralEdgeClosestToEquator);
-            int amountY = (int)Math.Ceiling(height / lengthCellLateralEdgeClosestToEquator);
-
-            List<Line>[,] emptyGrid = new List<Line>[amountX, amountY];
-            for (int x = 0; x < emptyGrid.GetLength(0); x++)
-                for (int y = 0; y < emptyGrid.GetLength(1); y++)
-                    emptyGrid[x, y] = new List<Line>();
-
-            return emptyGrid;
-        }*/
     }
 }
