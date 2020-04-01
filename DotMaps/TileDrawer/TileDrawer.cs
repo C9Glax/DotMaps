@@ -7,7 +7,7 @@ using DotMaps.Utils;
 using System.Drawing;
 using System.IO;
 
-namespace DotMaps
+namespace DotMaps.Tiles
 {
     public class TileDrawer
     {

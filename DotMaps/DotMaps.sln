@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Slimmer", "Slimmer\Slimmer.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DrawEntireMap", "DrawEntireMap\DrawEntireMap.csproj", "{A553BC15-EC34-4294-9829-5D4F3C1044B0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TileDisplay", "TileDisplay\TileDisplay.csproj", "{490734CA-2100-4DE3-B3E4-7C9642E1A6CB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -61,6 +63,14 @@ Global
 		{A553BC15-EC34-4294-9829-5D4F3C1044B0}.Release|Any CPU.Build.0 = Release|Any CPU
 		{A553BC15-EC34-4294-9829-5D4F3C1044B0}.Release|x64.ActiveCfg = Release|Any CPU
 		{A553BC15-EC34-4294-9829-5D4F3C1044B0}.Release|x64.Build.0 = Release|Any CPU
+		{490734CA-2100-4DE3-B3E4-7C9642E1A6CB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{490734CA-2100-4DE3-B3E4-7C9642E1A6CB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{490734CA-2100-4DE3-B3E4-7C9642E1A6CB}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{490734CA-2100-4DE3-B3E4-7C9642E1A6CB}.Debug|x64.Build.0 = Debug|Any CPU
+		{490734CA-2100-4DE3-B3E4-7C9642E1A6CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{490734CA-2100-4DE3-B3E4-7C9642E1A6CB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{490734CA-2100-4DE3-B3E4-7C9642E1A6CB}.Release|x64.ActiveCfg = Release|Any CPU
+		{490734CA-2100-4DE3-B3E4-7C9642E1A6CB}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
