@@ -2,14 +2,14 @@
 {
     public struct _2DNode
     {
-        public float coordinateX { get; }
-        public float coordinateY { get; }
+        public float X { get; }
+        public float Y { get; }
         public ulong id;
 
         public _2DNode(ulong id, float coordinateX, float coordinateY)
         {
-            this.coordinateX = coordinateX;
-            this.coordinateY = coordinateY;
+            this.X = coordinateX;
+            this.Y = coordinateY;
             this.id = id;
         }
     }

@@ -4,17 +4,13 @@ namespace DotMaps.Datastructures
 {
     public struct Line
     {
-        public float startX, startY, finishX, finishY;
-        public Color color;
-        public float width;
-        public Line(float startX, float startY, float finishX, float finishY, Color color, float width)
+        public _2DNode from, to;
+        public Pen pen;
+        public Line(Pen pen, _2DNode from, _2DNode to)
         {
-            this.startX = startX;
-            this.startY = startY;
-            this.finishX = finishX;
-            this.finishY = finishY;
-            this.color = color;
-            this.width = width;
+            this.from = from;
+            this.to = to;
+            this.pen = pen;
         }
     }
 }

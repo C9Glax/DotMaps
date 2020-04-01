@@ -27,7 +27,7 @@ namespace DotMaps.Utils
                                     UInt64 id = Convert.ToUInt64(reader.GetAttribute("id"));
                                     float lat = Convert.ToSingle(reader.GetAttribute("lat").Replace('.', ','));
                                     float lon = Convert.ToSingle(reader.GetAttribute("lon").Replace('.', ','));
-                                    graph.nodes.Add(id, new _3DNode(id, lat, lon));
+                                    graph.AddNode(new Graph.Node(id, lat, lon));
                                     break;
                                 case "bounds":
                                     graph.minLat = Convert.ToSingle(reader.GetAttribute("minlat").Replace('.', ','));
@@ -73,8 +73,8 @@ namespace DotMaps.Utils
                                     {
                                         for (int i = 1; i < currentWay.nodes.Count; i++)
                                         {
-                                            _3DNode fromNode = currentWay.nodes[i];
-                                            _3DNode toNode = currentWay.nodes[i - 1];
+                                            Graph.Node fromNode = currentWay.nodes[i];
+                                            Graph.Node toNode = currentWay.nodes[i - 1];
 
                                             double distance = Functions.DistanceBetweenCoordinates(fromNode.lat, fromNode.lon, toNode.lat, toNode.lon);
                                             int speed = 50;
@@ -97,9 +97,9 @@ namespace DotMaps.Utils
                                             else if (currentWay.tags.ContainsKey("name"))
                                                 name = (string)currentWay.tags["name"];
 
-                                            toNode.AddConnection(new Connection(distance, timeNeeded, fromNode, (string)currentWay.tags["highway"], name));
+                                            toNode.AddConnection(new Graph.Connection(distance, timeNeeded, fromNode, (string)currentWay.tags["highway"], name));
                                             if (!currentWay.tags.ContainsKey("oneway") || ((string)currentWay.tags["oneway"]) == "no")
-                                                fromNode.AddConnection(new Connection(distance, timeNeeded, toNode, (string)currentWay.tags["highway"], name));
+                                                fromNode.AddConnection(new Graph.Connection(distance, timeNeeded, toNode, (string)currentWay.tags["highway"], name));
                                         }
                                     }
                                 }
@@ -125,7 +125,7 @@ namespace DotMaps.Utils
                             {
                                 case "nd":
                                     UInt64 id = Convert.ToUInt64(reader.GetAttribute("ref"));
-                                    currentWay.nodes.Add((_3DNode)graph.nodes[id]);
+                                    currentWay.nodes.Add((Graph.Node)graph.GetNodes()[id]);
                                     break;
                                 case "tag":
                                     string key = reader.GetAttribute("k");
@@ -148,8 +148,8 @@ namespace DotMaps.Utils
 
         public static Graph ReadNodesIntoGraph(Hashtable nodes, Graph graph)
         {
-            foreach (_3DNode node in nodes.Values)
-                graph.nodes.Add(node.id, node);
+            foreach (Graph.Node node in nodes.Values)
+                graph.AddNode(node);
             return graph;
         }
     }

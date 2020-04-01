@@ -17,11 +17,11 @@ namespace DotMaps.Datastructures
             this.nodes.Add(node.id, node);
         }
 
-        public Node[] GetNodes()
+        public Hashtable GetNodes()
         {
-            Node[] ret = new Node[this.nodes.Count];
-            this.nodes.Values.CopyTo(ret, 0);
-            return ret;
+            /*Node[] ret = new Node[this.nodes.Count];
+            this.nodes.Values.CopyTo(ret, 0);*///REWRITE
+            return this.nodes;
         }
 
         public Node GetNode(ulong id)
@@ -42,11 +42,15 @@ namespace DotMaps.Datastructures
         public struct Node
         {
             public ulong id { get; }
+            public float lat { get; }
+            public float lon { get; }
             private List<Connection> connections;
 
-            public Node(ulong id)
+            public Node(ulong id, float lat, float lon)
             {
                 this.id = id;
+                this.lat = lat;
+                this.lon = lon;
                 this.connections = new List<Connection>();
             }
 
@@ -65,11 +69,11 @@ namespace DotMaps.Datastructures
         {
             public double distance { get; }
             public float timeNeeded { get; }
-            public _3DNode neighbor { get; }
+            public Node neighbor { get; }
             public string type { get; }
             public string name { get; }
 
-            public Connection(double distance, float timeNeeded, _3DNode neighbor, string type, string name)
+            public Connection(double distance, float timeNeeded, Node neighbor, string type, string name)
             {
                 this.distance = distance;
                 this.timeNeeded = timeNeeded;
