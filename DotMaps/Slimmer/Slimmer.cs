@@ -1,6 +1,4 @@
-﻿using DotMaps.Utils;
-using DotMaps.Datastructures;
-using System.Collections;
+﻿using DotMaps.Datastructures;
 using System.Collections.Generic;
 using System;
 using System.Xml;
@@ -21,6 +19,7 @@ namespace DotMaps
             Thread statusPrinterThread = new Thread(statusThread);
             statusPrinterThread.Start(slimmer);
             slimmer.SlimOSMFormat(path, newPath);
+            statusPrinterThread.Abort();
         }
 
         string status = "";
@@ -52,13 +51,14 @@ namespace DotMaps
 
             FileStream outfile = new FileStream(newPath, FileMode.Create);
             StreamWriter writer = new StreamWriter(outfile, System.Text.Encoding.UTF8);
+            writer.AutoFlush = true;
             writer.WriteLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
             writer.WriteLine("<osm version=\"0.6\" generator=\"OSMSlimmer\" copyright=\"OpenStreetMap and contributors\" attribution=\"http://www.openstreetmap.org/copyright\" license=\"http://opendatacommons.org/licenses/odbl/1-0/\">");
 
             Console.WriteLine("Reading and Cleaning ways");
 
-            HashSet<UInt64> neededNodesIds = new HashSet<UInt64>();
-            List<UInt64> currentNodes = new List<ulong>();
+            HashSet<ulong> neededNodesIds = new HashSet<ulong>();
+            List<ulong> currentNodes = new List<ulong>();
             Way currentWay = new Way(0);
             uint line = 0;
             while (reader.Read())
@@ -116,7 +116,7 @@ namespace DotMaps
                         switch (reader.Name)
                         {
                             case "nd":
-                                UInt64 id = Convert.ToUInt64(reader.GetAttribute("ref"));
+                                ulong id = Convert.ToUInt64(reader.GetAttribute("ref"));
                                 currentNodes.Add(id);
                                 break;
                             case "tag":
@@ -141,7 +141,7 @@ namespace DotMaps
                 this.status = "Copying Necessary Nodes: " + countCopiedNodes + "/" + neededNodesIds.Count;
                 if (reader.NodeType != XmlNodeType.EndElement && reader.Depth == 1 && reader.Name == "node")
                 {
-                    UInt64 id = Convert.ToUInt64(reader.GetAttribute("id"));
+                    ulong id = Convert.ToUInt64(reader.GetAttribute("id"));
                     string lat = reader.GetAttribute("lat");
                     string lon = reader.GetAttribute("lon");
                     if (neededNodesIds.Contains(id))
@@ -157,12 +157,18 @@ namespace DotMaps
             Console.WriteLine("Flushing");
             writer.Flush();
             writer.Close();
+            outfile.Close();
             this.status = "Done. You can now close the program.";
         }
 
         private static string Cleaner(string input)
         {
-            return input.Replace("&", "und").Replace('"', ' ');
+            input = input.Replace("&", "und");
+            input = input.Replace('"', ' ');
+            input = input.Replace('<', ' ');
+            input = input.Replace('>', ' ');
+            
+            return input;
             
         }
     }
