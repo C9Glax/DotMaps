@@ -27,7 +27,7 @@ namespace DotMaps.Utils
                                     UInt64 id = Convert.ToUInt64(reader.GetAttribute("id"));
                                     float lat = Convert.ToSingle(reader.GetAttribute("lat").Replace('.', ','));
                                     float lon = Convert.ToSingle(reader.GetAttribute("lon").Replace('.', ','));
-                                    graph.AddNode(new Graph.Node(id, lat, lon));
+                                    graph.AddNode(new Graph.GraphNode(id, lat, lon));
                                     break;
                                 case "bounds":
                                     graph.minLat = Convert.ToSingle(reader.GetAttribute("minlat").Replace('.', ','));
@@ -73,8 +73,8 @@ namespace DotMaps.Utils
                                     {
                                         for (int i = 1; i < currentWay.nodes.Count; i++)
                                         {
-                                            Graph.Node fromNode = currentWay.nodes[i];
-                                            Graph.Node toNode = currentWay.nodes[i - 1];
+                                            Graph.GraphNode fromNode = currentWay.nodes[i];
+                                            Graph.GraphNode toNode = currentWay.nodes[i - 1];
 
                                             double distance = Functions.DistanceBetweenCoordinates(fromNode.lat, fromNode.lon, toNode.lat, toNode.lon);
                                             int speed = 50;
@@ -125,7 +125,7 @@ namespace DotMaps.Utils
                             {
                                 case "nd":
                                     UInt64 id = Convert.ToUInt64(reader.GetAttribute("ref"));
-                                    currentWay.nodes.Add((Graph.Node)graph.GetNodes()[id]);
+                                    currentWay.nodes.Add((Graph.GraphNode)graph.GetNodes()[id]);
                                     break;
                                 case "tag":
                                     string key = reader.GetAttribute("k");
@@ -148,7 +148,7 @@ namespace DotMaps.Utils
 
         public static Graph ReadNodesIntoGraph(Hashtable nodes, Graph graph)
         {
-            foreach (Graph.Node node in nodes.Values)
+            foreach (Graph.GraphNode node in nodes.Values)
                 graph.AddNode(node);
             return graph;
         }

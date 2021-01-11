@@ -12,7 +12,7 @@ namespace DotMaps.Datastructures
             this.nodes = new Hashtable();
         }
 
-        public void AddNode(Node node)
+        public void AddNode(GraphNode node)
         {
             this.nodes.Add(node.id, node);
         }
@@ -24,9 +24,9 @@ namespace DotMaps.Datastructures
             return this.nodes;
         }
 
-        public Node GetNode(ulong id)
+        public GraphNode GetNode(ulong id)
         {
-            return (Node)this.nodes[id];
+            return (GraphNode)this.nodes[id];
         }
 
         public bool ContainsNode(ulong id)
@@ -39,14 +39,14 @@ namespace DotMaps.Datastructures
             return this.nodes.Count;
         }
 
-        public struct Node
+        public struct GraphNode
         {
             public ulong id { get; }
             public float lat { get; }
             public float lon { get; }
             private List<Connection> connections;
 
-            public Node(ulong id, float lat, float lon)
+            public GraphNode(ulong id, float lat, float lon)
             {
                 this.id = id;
                 this.lat = lat;
@@ -69,11 +69,11 @@ namespace DotMaps.Datastructures
         {
             public double distance { get; }
             public float timeNeeded { get; }
-            public Node neighbor { get; }
+            public GraphNode neighbor { get; }
             public string type { get; }
             public string name { get; }
 
-            public Connection(double distance, float timeNeeded, Node neighbor, string type, string name)
+            public Connection(double distance, float timeNeeded, GraphNode neighbor, string type, string name)
             {
                 this.distance = distance;
                 this.timeNeeded = timeNeeded;
