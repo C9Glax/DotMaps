@@ -16,7 +16,7 @@ namespace DotMaps
             Console.WriteLine("Path to save _slim.osm");
             string newPath = Console.ReadLine();
             Slimmer slimmer = new Slimmer();
-            Thread statusPrinterThread = new Thread(statusThread);
+            Thread statusPrinterThread = new Thread(StatusThread);
             statusPrinterThread.Start(slimmer);
             slimmer.SlimOSMFormat(path, newPath);
             statusPrinterThread.Abort();
@@ -24,11 +24,11 @@ namespace DotMaps
 
         string status = "";
 
-        public static void statusThread(object slimmerObject)
+        public static void StatusThread(object slimmerObject)
         {
             Slimmer slimmer = (Slimmer)slimmerObject;
-            int line = Console.CursorTop;
-            while (true)
+            int line;
+            while (Thread.CurrentThread.ThreadState != ThreadState.AbortRequested)
             {
                 line = Console.CursorTop;
                 Console.WriteLine(slimmer.status);
@@ -43,17 +43,29 @@ namespace DotMaps
             const byte UNKNOWN = 0, NODE = 1, WAY = 2, READING = 1, DONE = 0;
             byte nodeType = UNKNOWN, state = DONE;
             List<string> copykeys = new List<string>();
-            copykeys.AddRange(new string[] { "addr:city", "addr:housenumber", "addr:postcode", "addr:street", "addr:country", "highway", "oneway", "mayspeed", "name" });
+            foreach (string key in File.ReadAllLines("copykeys.txt"))
+                copykeys.Add(key);
 
-            XmlReaderSettings settings = new XmlReaderSettings();
-            settings.IgnoreWhitespace = true;
-            XmlReader reader = XmlReader.Create(path, settings);
+            XmlReaderSettings readerSettings = new XmlReaderSettings()
+            {
+                IgnoreWhitespace = true
+            };
+            XmlReader reader = XmlReader.Create(path, readerSettings);
 
-            FileStream outfile = new FileStream(newPath, FileMode.Create);
-            StreamWriter writer = new StreamWriter(outfile, System.Text.Encoding.UTF8);
-            writer.AutoFlush = true;
-            writer.WriteLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-            writer.WriteLine("<osm version=\"0.6\" generator=\"OSMSlimmer\" copyright=\"OpenStreetMap and contributors\" attribution=\"http://www.openstreetmap.org/copyright\" license=\"http://opendatacommons.org/licenses/odbl/1-0/\">");
+            XmlWriterSettings writerSettings = new XmlWriterSettings()
+            {
+                Encoding = System.Text.Encoding.UTF8,
+                Indent = true
+            };
+            XmlWriter writer = XmlWriter.Create(newPath, writerSettings);
+
+            writer.WriteStartDocument();
+            writer.WriteStartElement("osm");
+            writer.WriteAttributeString("version", "0.6");
+            writer.WriteAttributeString("generator", "OSMSlimmer");
+            writer.WriteAttributeString("copyright", "OpenStreetMap and contributors");
+            writer.WriteAttributeString("attribtion", "http://www.openstreetmap.org/copyright");
+            writer.WriteAttributeString("license", "http://opendatacommons.org/licenses/odbl/1-0/");
 
             Console.WriteLine("Reading and Cleaning ways");
 
@@ -71,12 +83,15 @@ namespace DotMaps
                         if(state == READING && nodeType == WAY)
                         {
                             state = DONE;
-                            writer.WriteLine("  <way id=\"" + currentWay.id + "\">");
+                            writer.WriteStartElement("way");
+                            writer.WriteAttributeString("id", currentWay.id.ToString());
                             if (currentWay.tags.ContainsKey("highway"))
                             {
                                 foreach (ulong nodeID in currentNodes)
                                 {
-                                    writer.WriteLine("    <nd ref=\"" + nodeID + "\" />");
+                                    writer.WriteStartElement("nd");
+                                    writer.WriteAttributeString("ref", nodeID.ToString());
+                                    writer.WriteEndElement();
                                     if (!neededNodesIds.Contains(nodeID))
                                         neededNodesIds.Add(nodeID);
                                 }
@@ -84,11 +99,19 @@ namespace DotMaps
                             else if (currentWay.tags.ContainsKey("addr:housenumber") && !neededNodesIds.Contains(currentNodes[0]))
                             {
                                 neededNodesIds.Add(currentNodes[0]);
-                                writer.WriteLine("    <nd ref=\"" + currentNodes[0] + "\" />");
+
+                                writer.WriteStartElement("nd");
+                                writer.WriteAttributeString("ref", currentNodes[0].ToString());
+                                writer.WriteEndElement();
                             }
                             foreach (string key in currentWay.tags.Keys)
-                                writer.WriteLine("    <tag k=\"" + key + "\" v=\"" + Cleaner(currentWay.tags[key].ToString()) + "\" />");
-                            writer.WriteLine("  </way>");
+                            {
+                                writer.WriteStartElement("tag");
+                                writer.WriteAttributeString("k", key);
+                                writer.WriteAttributeString("v", Cleaner(currentWay.tags[key].ToString()));
+                                writer.WriteEndElement();
+                            }
+                            writer.WriteEndElement();
                         }
                         switch (reader.Name)
                         {
@@ -103,7 +126,12 @@ namespace DotMaps
                                 break;
                             case "bounds":
                                 nodeType = UNKNOWN;
-                                writer.WriteLine("  <bounds minlat=\"" + reader.GetAttribute("minlat") + "\" minlon=\"" + reader.GetAttribute("minlon") + "\" maxlat=\"" + reader.GetAttribute("maxlat") + "\" maxlon=\"" + reader.GetAttribute("maxlon") + "\" />");
+                                writer.WriteStartElement("bounds");
+                                writer.WriteAttributeString("minlat", reader.GetAttribute("minlat"));
+                                writer.WriteAttributeString("minlon", reader.GetAttribute("minlon"));
+                                writer.WriteAttributeString("maxlat", reader.GetAttribute("maxlat"));
+                                writer.WriteAttributeString("maxlon", reader.GetAttribute("maxlon"));
+                                writer.WriteEndElement();
                                 break;
                             default:
                                 nodeType = UNKNOWN;
@@ -130,12 +158,11 @@ namespace DotMaps
             }
             reader.Close();
             Console.WriteLine("Flushing");
-            writer.Flush();
 
             Console.WriteLine("Copying Necessary Nodes");
 
             uint countCopiedNodes = 0;
-            reader = XmlReader.Create(path, settings);
+            reader = XmlReader.Create(path, readerSettings);
             while (reader.Read())
             {
                 this.status = "Copying Necessary Nodes: " + countCopiedNodes + "/" + neededNodesIds.Count;
@@ -146,18 +173,20 @@ namespace DotMaps
                     string lon = reader.GetAttribute("lon");
                     if (neededNodesIds.Contains(id))
                     {
-                        writer.WriteLine("  <node id=\"" + id + "\" lat=\"" + lat + "\" lon=\"" + lon + "\" />");
+                        writer.WriteStartElement("node");
+                        writer.WriteAttributeString("id", id.ToString());
+                        writer.WriteAttributeString("lat", lat);
+                        writer.WriteAttributeString("lon", lon);
+                        writer.WriteEndElement();
                         countCopiedNodes++;
                     }
                 }
             }
             reader.Close();
 
-            writer.WriteLine("</osm>");
+            writer.WriteEndElement();
+            writer.WriteEndDocument();
             Console.WriteLine("Flushing");
-            writer.Flush();
-            writer.Close();
-            outfile.Close();
             this.status = "Done. You can now close the program.";
         }
 
