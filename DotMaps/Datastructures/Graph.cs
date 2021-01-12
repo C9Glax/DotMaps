@@ -39,12 +39,17 @@ namespace DotMaps.Datastructures
             return this.nodes.Count;
         }
 
-        public struct GraphNode
+        public class GraphNode
         {
             public ulong id { get; }
             public float lat { get; }
             public float lon { get; }
+            
             private List<Connection> connections;
+
+            public GraphNode previous;
+
+            public double weight;
 
             public GraphNode(ulong id, float lat, float lon)
             {
@@ -52,6 +57,8 @@ namespace DotMaps.Datastructures
                 this.lat = lat;
                 this.lon = lon;
                 this.connections = new List<Connection>();
+                this.previous = null;
+                this.weight = double.MaxValue;
             }
 
             public void AddConnection(Connection connection)
