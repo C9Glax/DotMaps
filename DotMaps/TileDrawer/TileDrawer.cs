@@ -13,15 +13,15 @@ namespace DotMaps.Tiles
     {
         static void Main(string[] args)
         {
-            Console.WriteLine(".osm File to read");
+            Console.WriteLine("Path to .osm file");
             string path = Console.ReadLine();
-            Console.WriteLine("output path");
+            Console.WriteLine("Output folder");
             string newPath = Console.ReadLine();
             if(!newPath.EndsWith('\\'))
                 newPath += '\\';
-            Console.WriteLine("Tilesize (pixels)");
+            Console.WriteLine("Tilesize (pixels) Recommended value = 100");
             int size = Convert.ToInt32(Console.ReadLine());
-            Console.WriteLine("Scale");
+            Console.WriteLine("Scale (1 km = x px) Recommended value = 100");
             int scale = Convert.ToInt32(Console.ReadLine());
             DrawTiles(path, newPath, size, scale);
         }
