@@ -17,6 +17,8 @@ namespace DotMaps.Tiles
             string path = Console.ReadLine();
             Console.WriteLine("output path");
             string newPath = Console.ReadLine();
+            if(!newPath.EndsWith('\\'))
+                newPath += '\\';
             Console.WriteLine("Tilesize (pixels)");
             int size = Convert.ToInt32(Console.ReadLine());
             Console.WriteLine("Scale");
@@ -69,7 +71,7 @@ namespace DotMaps.Tiles
             int yAmount = (int)Math.Ceiling((bottomRight.Y - topLeft.Y) / tileSize);
             float xOffset = -topLeft.X;
             float yOffset = -topLeft.Y;
-            Console.WriteLine("LatDiff {0} = yAmount {1} \tLonDiff {2} = xAmount{3}", latDiff, yAmount, lonDiff, xAmount);
+            Console.WriteLine("LatDiff {0} = yAmount {1} \tLonDiff {2} = xAmount {3}", latDiff, yAmount, lonDiff, xAmount);
 
             List<Line>[,] grid = new List<Line>[xAmount, yAmount];
             for (int x = 0; x < xAmount; x++)
@@ -111,8 +113,10 @@ namespace DotMaps.Tiles
                             }
                             if (reader.Name == "way")
                             {
-                                currentNodes = new List<_3DNode>();
-                                currentWay = new Way(Convert.ToUInt64(reader.GetAttribute("id")));
+                                currentNodes.Clear();
+                                currentWay.id = Convert.ToUInt64(reader.GetAttribute("id"));
+                                currentWay.tags.Clear();
+                                currentWay.nodes.Clear();
                                 nodeType = WAY;
                             }
                             else
@@ -134,7 +138,10 @@ namespace DotMaps.Tiles
                 reader.Close();
             }
 
-            for(int x = 0; x < xAmount; x++)
+            Directory.CreateDirectory(newPath);
+            File.Copy(path, newPath + "map.osm", true);
+            File.WriteAllText(newPath + "scale", scale.ToString());
+            for (int x = 0; x < xAmount; x++)
             {
                 Directory.CreateDirectory(newPath + "\\" + x);
                 for(int y = 0; y < yAmount; y++)
