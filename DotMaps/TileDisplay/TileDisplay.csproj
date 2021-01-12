@@ -122,5 +122,19 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Datastructures\Datastructures.csproj">
+      <Project>{5e46422e-cdee-4750-b6f0-894eec123ea6}</Project>
+      <Name>Datastructures</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Pathfinding\Pathfinding.csproj">
+      <Project>{5d24e0ae-9231-472d-96e7-727993d2257a}</Project>
+      <Name>Pathfinding</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Utils\Utils.csproj">
+      <Project>{9055eabe-46ed-4ecf-bf10-434475ce8019}</Project>
+      <Name>Utils</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
