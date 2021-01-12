@@ -21,7 +21,7 @@ namespace DotMaps.Tiles
                 newPath += '\\';
             Console.WriteLine("Tilesize (pixels) Recommended value = 100");
             int size = Convert.ToInt32(Console.ReadLine());
-            Console.WriteLine("Scale (1 km = x px) Recommended value = 100");
+            Console.WriteLine("Scale (1 km = x px at the center) Recommended value = 100");
             int scale = Convert.ToInt32(Console.ReadLine());
             DrawTiles(path, newPath, size, scale);
         }
@@ -67,11 +67,13 @@ namespace DotMaps.Tiles
             _3DNode center = new _3DNode(minLat + latDiff / 2, minLon + lonDiff / 2);
             _2DNode topLeft = Functions._2DNodeFrom3DNode(new _3DNode(maxLat, minLon), center, scale);
             _2DNode bottomRight = Functions._2DNodeFrom3DNode(new _3DNode(minLat, maxLon), center, scale);
+            Console.WriteLine("Top-Left x,y: {0}, {1}", topLeft.X, topLeft.Y);
+            Console.WriteLine("Bottom-Right x,y: {0}, {1}", bottomRight.X, bottomRight.Y);
             int xAmount = (int)Math.Ceiling((bottomRight.X - topLeft.X) / tileSize);
             int yAmount = (int)Math.Ceiling((bottomRight.Y - topLeft.Y) / tileSize);
             float xOffset = -topLeft.X;
             float yOffset = -topLeft.Y;
-            Console.WriteLine("LatDiff {0} = yAmount {1} \tLonDiff {2} = xAmount {3}", latDiff, yAmount, lonDiff, xAmount);
+            Console.WriteLine("LatDiff: {0} = {1} yTiles\t\tLonDiff: {2} = {3} xTiles", latDiff, yAmount, lonDiff, xAmount);
 
             List<Line>[,] grid = new List<Line>[xAmount, yAmount];
             for (int x = 0; x < xAmount; x++)

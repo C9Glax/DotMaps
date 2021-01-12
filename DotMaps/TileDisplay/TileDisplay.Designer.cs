@@ -99,6 +99,7 @@
             // 
             // toolStripStatusLabel4
             // 
+            this.toolStripStatusLabel4.BackColor = System.Drawing.Color.Transparent;
             this.toolStripStatusLabel4.Name = "toolStripStatusLabel4";
             this.toolStripStatusLabel4.Size = new System.Drawing.Size(82, 17);
             this.toolStripStatusLabel4.Text = "Lat,Lng:0.0,0.0";
