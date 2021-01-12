@@ -1,4 +1,5 @@
-﻿motorway,130
+﻿default,50
+motorway,130
 trunk,110
 primary,95
 secondary,90

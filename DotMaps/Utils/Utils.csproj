@@ -6,6 +6,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="copykeys.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="copykeys.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Datastructures\Datastructures.csproj" />
   </ItemGroup>
 

@@ -1,0 +1,9 @@
+﻿addr:city
+addr:housenumber
+addr:postcode
+addr:street
+addr:country
+highway
+oneway
+mayspeed
+name

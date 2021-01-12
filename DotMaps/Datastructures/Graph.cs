@@ -70,16 +70,14 @@ namespace DotMaps.Datastructures
             public double distance { get; }
             public float timeNeeded { get; }
             public GraphNode neighbor { get; }
-            public string type { get; }
             public string name { get; }
             public List<_3DNode> coordinates { get; }
 
-            public Connection(double distance, float timeNeeded, GraphNode neighbor, string type, string name, List<_3DNode> coordinates)
+            public Connection(double distance, float timeNeeded, GraphNode neighbor, string name, List<_3DNode> coordinates)
             {
                 this.distance = distance;
                 this.timeNeeded = timeNeeded;
                 this.neighbor = neighbor;
-                this.type = type;
                 this.name = name;
                 this.coordinates = coordinates;
             }
