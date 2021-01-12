@@ -53,12 +53,12 @@ namespace DotMaps.Utils
             return angle;
         }
 
-        public static _2DNode _2DNodeFrom3DNode(_3DNode node, _3DNode center, int scale)
+        public static _2DNode _2DNodeFrom3DNode(_3DNode node, _3DNode cameraCenter, int scale)
         {
             //Node Position in 3D space
-            double ax = Math.Cos(DegreesToRadians(node.lon)) * Math.Cos(DegreesToRadians(node.lat)) * earthRadius;
-            double ay = Math.Sin(DegreesToRadians(node.lat)) * earthRadius;
-            double az = Math.Sin(DegreesToRadians(node.lon)) * Math.Cos(DegreesToRadians(node.lat)) * earthRadius;
+            double ax = Math.Cos(DegreesToRadians(node.lon)) * Math.Cos(DegreesToRadians(node.lat));
+            double ay = Math.Sin(DegreesToRadians(node.lat));
+            double az = Math.Sin(DegreesToRadians(node.lon)) * Math.Cos(DegreesToRadians(node.lat));
 
             //Camera Position
             //double cx = 0;
@@ -66,14 +66,14 @@ namespace DotMaps.Utils
             //double cz = 0;
 
             //Camera Rotation
-            double ox = DegreesToRadians(-center.lat);
-            double oy = DegreesToRadians(90 - center.lon);
+            double ox = DegreesToRadians(-cameraCenter.lat);
+            double oy = DegreesToRadians(90 - cameraCenter.lon);
             //double oz = 0; 
 
             //Screen Position
             //double ex = 0;
             //double ey = 0;
-            double ez = -(earthRadius * scale);
+            double ez = -(scale + 1);
 
             //double x = ax - cx;
             //double y = ay - cy;
@@ -85,23 +85,16 @@ namespace DotMaps.Utils
             //double dz = Math.Cos(ox) * (Math.Cos(oy) * z + Math.Sin(oy) * (Math.Sin(oz) * y + Math.Cos(oz) * x)) - Math.Sin(ox) * (Math.Cos(oz) * y - Math.Sin(oz) * x);
             double dz = Math.Cos(ox) * (Math.Cos(oy) * az + Math.Sin(oy) * ax) - Math.Sin(ox) * ay;
 
-            //Node Position on Screen
+            //Node Position on Screen from center
             double bx = (ez / dz) * dx;// + ex;
             double by = (ez / dz) * dy;// + ey;
-            bx += scale / 2;
-            by += scale / 2;
 
             return new _2DNode((float)bx, (float)by);
         }
 
-        /*public static _3DNode _3DNodeFrom2DNode(_2DNode node, _3DNode center, int scale)
+        public static _3DNode _3DNodeFrom2DNode(_2DNode node, _3DNode center, int scale)
         {
-            double bx = node.X - scale / 2;
-            double by = node.Y - scale / 2;
-
-            //double ex = 0;
-            //double ey = 0;
-            double ez = -(earthRadius * scale + 1);
-        }*/
+            
+        }
     }
 }
