@@ -8,56 +8,27 @@ namespace DotMaps.Utils
     public class Importer
     {
 
-        public static Graph ReadNodesFromOSMFileIntoGraph(string path)
-        {
-            Graph graph = new Graph();
-
-            XmlReaderSettings settings = new XmlReaderSettings();
-            settings.IgnoreWhitespace = true;
-            using (XmlReader reader = XmlReader.Create(path, settings)) {
-                while (reader.Read())
-                {
-                    if (reader.NodeType != XmlNodeType.EndElement)
-                    {
-                        if (reader.Depth == 1)
-                        {
-                            switch (reader.Name)
-                            {
-                                case "node":
-                                    UInt64 id = Convert.ToUInt64(reader.GetAttribute("id"));
-                                    float lat = Convert.ToSingle(reader.GetAttribute("lat").Replace('.', ','));
-                                    float lon = Convert.ToSingle(reader.GetAttribute("lon").Replace('.', ','));
-                                    graph.AddNode(new Graph.GraphNode(id, lat, lon));
-                                    break;
-                                case "bounds":
-                                    graph.minLat = Convert.ToSingle(reader.GetAttribute("minlat").Replace('.', ','));
-                                    graph.minLon = Convert.ToSingle(reader.GetAttribute("minlon").Replace('.', ','));
-                                    graph.maxLat = Convert.ToSingle(reader.GetAttribute("maxlat").Replace('.', ','));
-                                    graph.maxLon = Convert.ToSingle(reader.GetAttribute("maxlon").Replace('.', ','));
-                                    break;
-                            }
-                        }
-                    }
-                }
-                reader.Close();
-            }
-            return graph;
-        }
-
         public static void  ReadWaysFromOSMFileIntoConnections(string path, ref Graph graph)
         {
+            const byte UNKNOWN = 0, NODE = 1, WAY = 2, READING = 1, DONE = 0;
+            byte nodeType = UNKNOWN, state = DONE;
+
             Hashtable speeds = new Hashtable();
             foreach (string speed in System.IO.File.ReadAllLines("speeds.txt"))
                 speeds.Add(speed.Split(',')[0], Convert.ToInt32(speed.Split(',')[1]));
 
-            XmlReaderSettings settings = new XmlReaderSettings();
-            settings.IgnoreWhitespace = true;
-            const byte UNKNOWN = 0, NODE = 1, WAY = 2, READING = 1, DONE = 0;
-            byte nodeType = UNKNOWN, state = DONE;
+            XmlReaderSettings settings = new XmlReaderSettings()
+            {
+                IgnoreWhitespace = true
+            };
 
-            Way currentWay = new Way(0);
+            //Way currentWay = new Way(0);
             using (XmlReader reader = XmlReader.Create(path, settings))
             {
+                
+
+
+                /*
                 while (reader.Read())
                 {
                     if (reader.NodeType != XmlNodeType.EndElement)
@@ -135,7 +106,7 @@ namespace DotMaps.Utils
                             }
                         }
                     }
-                }
+                }*/
                 reader.Close();
             }
         }

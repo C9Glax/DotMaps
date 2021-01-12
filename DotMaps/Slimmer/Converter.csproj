@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{B2532692-A969-4265-A684-5C21E7C472FF}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>Slimmer</RootNamespace>
-    <AssemblyName>Slimmer</AssemblyName>
+    <RootNamespace>Converter</RootNamespace>
+    <AssemblyName>Converter</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -77,10 +77,10 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>DotMaps.Converter.Converter</StartupObject>
+  </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Datastructures">
-      <HintPath>..\Datastructures\bin\Debug\netstandard2.0\Datastructures.dll</HintPath>
-    </Reference>
     <Reference Include="netstandard" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -92,8 +92,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Converter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Slimmer.cs" />
+    <Compile Include="Splitter.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -102,6 +104,12 @@
     <Content Include="copykeys.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Datastructures\Datastructures.csproj">
+      <Project>{5e46422e-cdee-4750-b6f0-894eec123ea6}</Project>
+      <Name>Datastructures</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

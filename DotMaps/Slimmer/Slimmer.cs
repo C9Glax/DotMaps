@@ -3,45 +3,16 @@ using System.Collections.Generic;
 using System;
 using System.Xml;
 using System.IO;
-using System.Threading;
 
-namespace DotMaps
+namespace DotMaps.Converter
 {
     public class Slimmer
     {
-        public static void Main(string[] args)
-        {
-            Console.WriteLine("Path to .osm");
-            string path = Console.ReadLine();
-            Console.WriteLine("Path to save _slim.osm");
-            string newPath = Console.ReadLine();
-            Slimmer slimmer = new Slimmer();
-            Thread statusPrinterThread = new Thread(StatusThread);
-            statusPrinterThread.Start(slimmer);
-            slimmer.SlimOSMFormat(path, newPath);
-            statusPrinterThread.Abort();
-        }
 
-        string status = "";
-
-        public static void StatusThread(object slimmerObject)
+        public void SlimOSMFormat(Converter parent, string path, string newPath)
         {
-            Slimmer slimmer = (Slimmer)slimmerObject;
-            int line;
-            while (Thread.CurrentThread.ThreadState != ThreadState.AbortRequested)
-            {
-                line = Console.CursorTop;
-                Console.WriteLine(slimmer.status);
-                Console.CursorTop = line;
-                Thread.Sleep(100);
-            }
-        }
-
-        
-        public void SlimOSMFormat(string path, string newPath)
-        {
-            const byte UNKNOWN = 0, NODE = 1, WAY = 2, READING = 1, DONE = 0;
-            byte nodeType = UNKNOWN, state = DONE;
+            const byte UNKNOWN = 0, NODE = 1, WAY = 2, READINGNODES = 1, NODEREAD = 0;
+            byte nodeType = UNKNOWN, state = NODEREAD;
             List<string> copykeys = new List<string>();
             foreach (string key in File.ReadAllLines("copykeys.txt"))
                 copykeys.Add(key);
@@ -75,14 +46,14 @@ namespace DotMaps
             uint line = 0;
             while (reader.Read())
             {
-                this.status = "Reading and Cleaning Ways Line: " + ++line + " Nodetype: " + reader.Name + "   ";
+                parent.status = "Reading and Cleaning Ways Line: " + ++line + " Nodetype: " + reader.Name + "   ";
                 if (reader.NodeType != XmlNodeType.EndElement)
                 {
                     if (reader.Depth == 1)
                     {
-                        if(state == READING && nodeType == WAY)
+                        if(state == READINGNODES && nodeType == WAY)
                         {
-                            state = DONE;
+                            state = NODEREAD;
                             writer.WriteStartElement("way");
                             writer.WriteAttributeString("id", currentWay.id.ToString());
                             if (currentWay.tags.ContainsKey("highway"))
@@ -140,7 +111,7 @@ namespace DotMaps
                     }
                     else if (reader.Depth == 2 && nodeType == WAY)
                     {
-                        state = READING;
+                        state = READINGNODES;
                         switch (reader.Name)
                         {
                             case "nd":
@@ -157,15 +128,13 @@ namespace DotMaps
                 }
             }
             reader.Close();
-            Console.WriteLine("Flushing");
-
             Console.WriteLine("Copying Necessary Nodes");
 
             uint countCopiedNodes = 0;
             reader = XmlReader.Create(path, readerSettings);
             while (reader.Read())
             {
-                this.status = "Copying Necessary Nodes: " + countCopiedNodes + "/" + neededNodesIds.Count;
+                parent.status = "Copying Necessary Nodes: " + countCopiedNodes + "/" + neededNodesIds.Count;
                 if (reader.NodeType != XmlNodeType.EndElement && reader.Depth == 1 && reader.Name == "node")
                 {
                     ulong id = Convert.ToUInt64(reader.GetAttribute("id"));
@@ -183,11 +152,11 @@ namespace DotMaps
                 }
             }
             reader.Close();
-
             writer.WriteEndElement();
             writer.WriteEndDocument();
+            writer.Close();
             Console.WriteLine("Flushing");
-            this.status = "Done. You can now close the program.";
+            parent.status = "Done. You can now close the program.";
         }
 
         private static string Cleaner(string input)
