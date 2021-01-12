@@ -12,5 +12,12 @@
             this.Y = coordinateY;
             this.id = id;
         }
+
+        public _2DNode(float coordinateX, float coordinateY)
+        {
+            this.X = coordinateX;
+            this.Y = coordinateY;
+            this.id = 0;
+        }
     }
 }

@@ -88,7 +88,7 @@ namespace DotMaps.Utils
             bx += scale / 2;
             by += scale / 2;
 
-            return new _2DNode(node.id, (float)bx, (float)by);
+            return new _2DNode((float)bx, (float)by);
         }
     }
 }

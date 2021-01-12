@@ -50,7 +50,7 @@ namespace DotMaps.Tiles
                         ulong id = Convert.ToUInt64(reader.GetAttribute("id"));
                         float lat = Convert.ToSingle(reader.GetAttribute("lat").Replace('.', ','));
                         float lon = Convert.ToSingle(reader.GetAttribute("lon").Replace('.', ','));
-                        _3dnodes.Add(id, new _3DNode(id, lat, lon));
+                        _3dnodes.Add(id, new _3DNode(lat, lon));
                         minLat = lat < minLat ? lat : minLat;
                         minLon = lon < minLon ? lon : minLon;
                         maxLat = lat > maxLat ? lat : maxLat;
@@ -62,9 +62,9 @@ namespace DotMaps.Tiles
             }
             float latDiff = maxLat - minLat;
             float lonDiff = maxLon - minLon;
-            _3DNode center = new _3DNode(0, minLat + latDiff / 2, minLon + lonDiff / 2);
-            _2DNode topLeft = Functions._2DNodeFrom3DNode(new _3DNode(0, maxLat, minLon), center, scale);
-            _2DNode bottomRight = Functions._2DNodeFrom3DNode(new _3DNode(0, minLat, maxLon), center, scale);
+            _3DNode center = new _3DNode(minLat + latDiff / 2, minLon + lonDiff / 2);
+            _2DNode topLeft = Functions._2DNodeFrom3DNode(new _3DNode(maxLat, minLon), center, scale);
+            _2DNode bottomRight = Functions._2DNodeFrom3DNode(new _3DNode(minLat, maxLon), center, scale);
             int xAmount = (int)Math.Ceiling((bottomRight.X - topLeft.X) / tileSize);
             int yAmount = (int)Math.Ceiling((bottomRight.Y - topLeft.Y) / tileSize);
             float xOffset = -topLeft.X;
