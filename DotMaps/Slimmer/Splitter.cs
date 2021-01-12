@@ -78,6 +78,15 @@ namespace DotMaps.Converter
                                 currentWay.tags.Clear();
                                 currentWay.id = Convert.ToUInt64(reader.GetAttribute("id"));
                                 break;
+                            case "bounds":
+                                nodeType = UNKNOWN;
+                                writer.WriteStartElement("bounds");
+                                writer.WriteAttributeString("minlat", reader.GetAttribute("minlat"));
+                                writer.WriteAttributeString("minlon", reader.GetAttribute("minlon"));
+                                writer.WriteAttributeString("maxlat", reader.GetAttribute("maxlat"));
+                                writer.WriteAttributeString("maxlon", reader.GetAttribute("maxlon"));
+                                writer.WriteEndElement();
+                                break;
                             default:
                                 nodeType = UNKNOWN;
                                 break;
