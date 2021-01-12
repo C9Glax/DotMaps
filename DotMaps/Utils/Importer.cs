@@ -9,7 +9,6 @@ namespace DotMaps.Utils
 {
     public class Importer
     {
-
         public static void  ReadWaysFromOSMFileIntoConnections(string path, ref Graph graph)
         {
             const byte UNKNOWN = 0, NODE = 1, WAY = 2, READING = 1, DONE = 0;
@@ -82,9 +81,9 @@ namespace DotMaps.Utils
                                         else if (currentWay.tags.ContainsKey("name"))
                                             name = (string)currentWay.tags["name"]; ;
 
-                                        start.AddConnection(new Graph.Connection(distance, timeNeeded, end, name, coordinates));
+                                        end.AddConnection(new Graph.Connection(distance, timeNeeded, start, name, coordinates));
                                         if (!currentWay.tags.ContainsKey("oneway") || ((string)currentWay.tags["oneway"]) == "no")
-                                            end.AddConnection(new Graph.Connection(distance, timeNeeded, start, name, coordinates));
+                                            start.AddConnection(new Graph.Connection(distance, timeNeeded, end, name, coordinates));
                                     }
                                 }
                             }
@@ -127,13 +126,11 @@ namespace DotMaps.Utils
                 reader.Close();
             }
         }
-
         public static Graph ReadNodesIntoNewGraph(Hashtable nodes)
         {
             Graph map = new Graph();
             return ReadNodesIntoGraph(nodes, map);
         }
-
         public static Graph ReadNodesIntoGraph(Hashtable nodes, Graph graph)
         {
             foreach (Graph.GraphNode node in nodes.Values)
