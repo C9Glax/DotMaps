@@ -1,4 +1,5 @@
-﻿motorway,7,Blue,7
+﻿default,2,Gray,2
+motorway,7,Blue,7
 trunk,7,Orange,5
 primary,6,Yellow,4
 secondary,6,Yellow,4

@@ -25,13 +25,13 @@ namespace DotMaps.Utils
             return earthRadius * c;
         }
 
-        public static double DegreesToRadians(float degrees)
+        public static double DegreesToRadians(double deg)
         {
-            return degrees * Math.PI / 180;
+            return deg * Math.PI / 180.0;
         }
-        public static double RadiansToDegrees(double Radians)
+        public static double RadiansToDegrees(double rad)
         {
-            return (Radians * 180 / Math.PI + 360) % 360;
+            return (rad * 180.0 / Math.PI) % 360.0;
         }
 
         public static double AngleBetweenNodes(_3DNode node1, _3DNode node2)
@@ -53,6 +53,7 @@ namespace DotMaps.Utils
             return angle;
         }
 
+        /* OLD METHOD
         public static _2DNode _2DNodeFrom3DNode(_3DNode node, _3DNode cameraCenter, int scale)
         {
             //Node Position in 3D space
@@ -90,11 +91,122 @@ namespace DotMaps.Utils
             double by = (ez / dz) * dy;// + ey;
 
             return new _2DNode((float)bx, (float)by);
+        }*/
+
+        public static _2DNode _2DNodeFrom3DNode(_3DNode node, _3DNode cameraCenter, int scale)
+        {
+
+            //Vector to node
+            Vector nodeVector = new Vector(
+                Math.Cos(DegreesToRadians(node.lon)) * Math.Cos(DegreesToRadians(node.lat)),
+                Math.Sin(DegreesToRadians(node.lat)),
+                Math.Sin(DegreesToRadians(node.lon)) * Math.Cos(DegreesToRadians(node.lat)));
+            //Console.WriteLine("Node \tx: {0:0.000000000}\t\ty: {1:0.000000000}\t\tz: {2:0.000000000}", nodeVector.x, nodeVector.y, nodeVector.z);
+
+            //Camera Norm-Vector
+            Vector cameraVector = new Vector(
+                Math.Cos(DegreesToRadians(cameraCenter.lon)) * Math.Cos(DegreesToRadians(cameraCenter.lat)),
+                Math.Sin(DegreesToRadians(cameraCenter.lat)),
+                Math.Sin(DegreesToRadians(cameraCenter.lon)) * Math.Cos(DegreesToRadians(cameraCenter.lat))).Scale(scale*earthRadius);
+            //Console.WriteLine("Cam \tx: {0:000000000.00}\t\ty: {1:000000000.00}\t\tz: {2:000000000.00}", cameraVector.x, cameraVector.y, cameraVector.z);
+
+            if (cameraVector.DotProductWith(nodeVector) == 0) //Node can't be projected onto plane
+                Environment.Exit(-1);
+
+            //Intersection between line through node and "camera"-plane
+            double intersectionfactor = (Math.Pow(cameraVector.x, 2) + Math.Pow(cameraVector.y, 2) + Math.Pow(cameraVector.z, 2)) /
+                (cameraVector.x * nodeVector.x + cameraVector.y * nodeVector.y + cameraVector.z * nodeVector.z);
+            Vector vectorFromCenter = cameraVector.Subtract(nodeVector.Scale(intersectionfactor));
+
+
+            Vector verticalVector = new Vector(Math.Sin(DegreesToRadians(cameraCenter.lon)),
+                0,
+                -Math.Cos(DegreesToRadians(cameraCenter.lon)));
+
+            double angle = RadiansToDegrees(verticalVector.AngleTo(vectorFromCenter));
+            double x = vectorFromCenter.length * Math.Sin(DegreesToRadians(90 - angle)) / Math.Sin(DegreesToRadians(90));
+            double y = vectorFromCenter.length * Math.Sin(DegreesToRadians(angle)) / Math.Sin(DegreesToRadians(90));
+            if (node.lat > cameraCenter.lat)
+                y = -y;
+
+
+            //Console.WriteLine("\tA: {0:000}\t\t\tx: {1:00000000}\t\ty: {2:00000000}", angle,x,y);
+
+            return new _2DNode((float)x, (float)y);
         }
 
-        public static _3DNode _3DNodeFrom2DNode(_2DNode node, _3DNode center, int scale)
+        /*
+        public static _3DNode _3DNodeFrom2DNode(_2DNode node, _3DNode cameraCenter, int scale)
         {
-            
+            //Camera Norm-Vector
+            Vector cameraVector = new Vector(
+                Math.Cos(DegreesToRadians(cameraCenter.lon)) * Math.Cos(DegreesToRadians(cameraCenter.lat)),
+                Math.Sin(DegreesToRadians(cameraCenter.lat)),
+                Math.Sin(DegreesToRadians(cameraCenter.lon)) * Math.Cos(DegreesToRadians(cameraCenter.lat)));
+
+            Vector vectorFromCenter = new Vector()
+            {
+
+            }
+
+        }*/
+
+        internal class Vector
+        {
+            public double x { get; }
+            public double y { get; }
+            public double z { get; }
+            public double length { get; }
+            public Vector(double x, double y, double z)
+            {
+                this.x = x;
+                this.y = y;
+                this.z = z;
+                this.length = Math.Sqrt(x * x + y * y + z * z);
+            }
+
+            public Vector MultiplyWith(Vector secondVector)
+            {
+                return new Vector(this.x * secondVector.x, this.y * secondVector.y, this.z * secondVector.z);
+            }
+
+            public double AngleTo(Vector secondVector)
+            {
+                return Math.Acos(this.DotProductWith(secondVector) / (this.length * secondVector.length));
+            }
+
+            public double DotProductWith(Vector secondVector)
+            {
+                return this.x * secondVector.x + this.y * secondVector.y + this.z * secondVector.z;
+            }
+
+            public Vector CrossProductWith(Vector secondVector)
+            {
+                return new Vector(this.y * secondVector.z - this.y * secondVector.x,
+                    this.z * secondVector.x - this.x * secondVector.z,
+                    this.x * secondVector.y - this.y * secondVector.x);
+            }
+
+            public Vector Add(Vector secondVector)
+            {
+                return new Vector(this.x + secondVector.x,
+                    this.y + secondVector.y,
+                    this.z + secondVector.z);
+            }
+
+            public Vector Scale(double factor)
+            {
+                return new Vector(this.x * factor,
+                    this.y * factor,
+                    this.z * factor);
+            }
+
+            public Vector Subtract(Vector secondVector)
+            {
+                return new Vector(this.x - secondVector.x,
+                    this.y - secondVector.y,
+                    this.z - secondVector.z);
+            }
         }
     }
 }

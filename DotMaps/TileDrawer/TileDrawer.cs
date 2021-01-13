@@ -13,6 +13,7 @@ namespace DotMaps.Tiles
     {
         static void Main(string[] args)
         {
+            //Functions._2DNodeFrom3DNode(new _3DNode(0, -45), new _3DNode(0, 0), 100);
             Console.WriteLine("Path to .osm file");
             string path = Console.ReadLine();
             Console.WriteLine("Output folder");
@@ -21,13 +22,62 @@ namespace DotMaps.Tiles
                 newPath += '\\';
             Console.WriteLine("Tilesize (pixels) Recommended value = 100");
             int size = Convert.ToInt32(Console.ReadLine());
-            Console.WriteLine("Scale (1 km = x px at the center) Recommended value = 100");
+            Console.WriteLine("Scale (1 km = x px at the center) Recommended value = 1000");
             int scale = Convert.ToInt32(Console.ReadLine());
             DrawTiles(path, newPath, size, scale);
         }
 
         public static void DrawTiles(string path, string newPath, int tileSize, int scale)
         {
+            const byte UNKNOWN = 0, NODE = 1, WAY = 2, READINGNODES = 1, NODEREAD = 0;
+            byte nodeType = UNKNOWN, state = NODEREAD;
+
+            float minLat = float.MaxValue, maxLat = float.MinValue, minLon = float.MaxValue, maxLon = float.MinValue;
+
+            XmlReaderSettings settings = new XmlReaderSettings()
+            {
+                IgnoreWhitespace = true
+            };
+            Hashtable nodes = new Hashtable();
+            using (XmlReader reader = XmlReader.Create(path, settings))
+            {
+                reader.MoveToContent();
+                while (reader.Read())
+                {
+                    if (reader.NodeType != XmlNodeType.EndElement && reader.Depth == 1 && reader.Name == "node")
+                    {
+                        ulong id = Convert.ToUInt64(reader.GetAttribute("id"));
+                        float lon = Convert.ToSingle(reader.GetAttribute("lon").Replace(".", ","));
+                        float lat = Convert.ToSingle(reader.GetAttribute("lat").Replace(".", ","));
+                        nodes.Add(id, new _3DNode(lat, lon));
+                        minLat = minLat < lat ? minLat : lat;
+                        minLon = minLon < lon ? minLon : lon;
+                        maxLat = maxLat > lat ? maxLat : lat;
+                        maxLon = maxLon > lon ? maxLon : lon;
+                    }
+                }
+            }
+            float latDiff = maxLat - minLat;
+            float lonDiff = maxLon - minLon;
+            _3DNode center = new _3DNode(minLat + latDiff / 2, minLon + lonDiff / 2);
+            _2DNode topLeft = Functions._2DNodeFrom3DNode(new _3DNode(maxLat, minLon), center, scale);
+            _2DNode bottomRight = Functions._2DNodeFrom3DNode(new _3DNode(minLat, maxLon), center, scale);
+            float xOffset = -topLeft.X;
+            float yOffset = -topLeft.Y;
+            double width = bottomRight.X + xOffset;
+            double height = bottomRight.Y + yOffset;
+            int yAmount = (int)Math.Ceiling(height / tileSize);
+            int xAmount = (int)Math.Ceiling(width / tileSize);
+            Console.WriteLine("Top-Left\tx,y: {0}, {1}", topLeft.X, topLeft.Y);
+            Console.WriteLine("Bottom-Right\tx,y: {0}, {1}", bottomRight.X, bottomRight.Y);
+            Console.WriteLine("Height: {0}px => {2} Tiles \tWidth: {1}px => {3} Tiles", height, width, yAmount, xAmount);
+
+
+            List<Line>[,] grid = new List<Line>[xAmount, yAmount];
+            for (int x = 0; x < xAmount; x++)
+                for (int y = 0; y < yAmount; y++)
+                    grid[x, y] = new List<Line>();
+
             Hashtable pens = new Hashtable();
             foreach (string type in File.ReadAllLines("roadRender.txt"))
                 if (!type.StartsWith("//"))
@@ -37,107 +87,82 @@ namespace DotMaps.Tiles
                         pens.Add(key, new Pen(Color.FromName(type.Split(',')[2]), Convert.ToInt32(type.Split(',')[3])));
                 }
 
-            Hashtable _3dnodes = new Hashtable();
-            float minLat = float.MaxValue, maxLat = float.MinValue, minLon = float.MaxValue, maxLon = float.MinValue;
-
-            StreamReader stream = new StreamReader(path, System.Text.Encoding.UTF8);
-            XmlReaderSettings settings = new XmlReaderSettings();
-            settings.IgnoreWhitespace = true;
-            using (XmlReader reader = XmlReader.Create(stream, settings))
+            using (XmlReader reader = XmlReader.Create(path, settings))
             {
-                while (reader.Read())
-                {
-                    if (reader.NodeType != XmlNodeType.EndElement && reader.Depth == 1 && reader.Name == "node")
-                    {
-                        ulong id = Convert.ToUInt64(reader.GetAttribute("id"));
-                        float lat = Convert.ToSingle(reader.GetAttribute("lat").Replace('.', ','));
-                        float lon = Convert.ToSingle(reader.GetAttribute("lon").Replace('.', ','));
-                        _3dnodes.Add(id, new _3DNode(lat, lon));
-                        minLat = lat < minLat ? lat : minLat;
-                        minLon = lon < minLon ? lon : minLon;
-                        maxLat = lat > maxLat ? lat : maxLat;
-                        maxLon = lon > maxLon ? lon : maxLon;
-                    }
-                }
-                reader.Close();
-                stream.Close();
-            }
-            float latDiff = maxLat - minLat;
-            float lonDiff = maxLon - minLon;
-            _3DNode center = new _3DNode(minLat + latDiff / 2, minLon + lonDiff / 2);
-            _2DNode topLeft = Functions._2DNodeFrom3DNode(new _3DNode(maxLat, minLon), center, scale);
-            _2DNode bottomRight = Functions._2DNodeFrom3DNode(new _3DNode(minLat, maxLon), center, scale);
-            Console.WriteLine("Top-Left x,y: {0}, {1}", topLeft.X, topLeft.Y);
-            Console.WriteLine("Bottom-Right x,y: {0}, {1}", bottomRight.X, bottomRight.Y);
-            int xAmount = (int)Math.Ceiling((bottomRight.X - topLeft.X) / tileSize);
-            int yAmount = (int)Math.Ceiling((bottomRight.Y - topLeft.Y) / tileSize);
-            float xOffset = -topLeft.X;
-            float yOffset = -topLeft.Y;
-            Console.WriteLine("LatDiff: {0} = {1} yTiles\t\tLonDiff: {2} = {3} xTiles", latDiff, yAmount, lonDiff, xAmount);
-
-            List<Line>[,] grid = new List<Line>[xAmount, yAmount];
-            for (int x = 0; x < xAmount; x++)
-                for (int y = 0; y < yAmount; y++)
-                    grid[x, y] = new List<Line>();
-
-            const byte UNKNOWN = 0, WAY = 1, READING = 0, DONE = 1;
-            byte nodeType = UNKNOWN, state = DONE;
-            List<_3DNode> currentNodes = new List<_3DNode>();
-            Way currentWay = new Way(0);
-            stream = new StreamReader(path, System.Text.Encoding.UTF8);
-            using (XmlReader reader = XmlReader.Create(stream, settings))
-            {
+                List<ulong> currentNodes = new List<ulong>();
+                Way currentWay = new Way(0);
                 while (reader.Read())
                 {
                     if (reader.NodeType != XmlNodeType.EndElement)
                     {
                         if (reader.Depth == 1)
                         {
-                            if (state == READING && nodeType == WAY && currentWay.tags.ContainsKey("highway") && pens.ContainsKey((string)currentWay.tags["highway"]))
+                            if (state == READINGNODES && nodeType == WAY)
                             {
-                                state = DONE;
-                                Pen pen = (Pen)pens[(string)currentWay.tags["highway"]];
-                                _3DNode[] nodes = currentNodes.ToArray();
-                                for(int i = 1; i < nodes.Length; i++)
+                                state = NODEREAD;
+                                if (currentWay.tags.ContainsKey("highway"))
                                 {
-                                    _3DNode _3dfrom = nodes[i - 1];
-                                    _3DNode _3dto = nodes[i];
-                                    _2DNode _2dfrom = Functions._2DNodeFrom3DNode(_3dfrom, center, scale);
-                                    _2DNode _2dto = Functions._2DNodeFrom3DNode(_3dto, center, scale);
-                                    int minX = _2dfrom.X < _2dto.X ? (int)((_2dfrom.X + xOffset) / tileSize) : (int)((_2dto.X + xOffset) / tileSize);
-                                    int maxX = _2dfrom.X > _2dto.X ? (int)((_2dfrom.X + xOffset) / tileSize) : (int)((_2dto.X + xOffset) / tileSize);
-                                    int minY = _2dfrom.Y < _2dto.Y ? (int)((_2dfrom.Y + yOffset) / tileSize) : (int)((_2dto.Y + yOffset) / tileSize);
-                                    int maxY = _2dfrom.Y > _2dto.Y ? (int)((_2dfrom.Y + yOffset) / tileSize) : (int)((_2dto.Y + yOffset) / tileSize);
-                                    for (int x = minX; x <= maxX; x++)
-                                        for (int y = minY; y <= maxY; y++)
-                                            grid[x, y].Add(new Line(pen, _2dfrom, _2dto));
+                                    Pen pen = (Pen)pens[(string)currentWay.tags["highway"]];
+                                    if(pen == null)
+                                        pen = (Pen)pens["default"];
+                                    for (int i = 1; i < currentNodes.Count; i++)
+                                    {
+                                        _3DNode _3dfrom = (_3DNode)nodes[currentNodes[i - 1]];
+                                        _3DNode _3dto = (_3DNode)nodes[currentNodes[i]];
+                                        _2DNode _2dfrom = Functions._2DNodeFrom3DNode(_3dfrom, center, scale);
+                                        _2DNode _2dto = Functions._2DNodeFrom3DNode(_3dto, center, scale);
+                                        //Console.WriteLine("FROM X  {0:0000000.00} + {1:0000000.00} => {2:0000000.00}\t\tY  {3:0000000.00} + {4:0000000.00} => {5:0000000.00}", _2dfrom.X, xOffset, _2dfrom.X + xOffset, _2dfrom.Y, yOffset, _2dfrom.Y + yOffset);
+                                        //Console.WriteLine("TO   X  {0:0000000.00} + {1:0000000.00} => {2:0000000.00}\t\tY  {3:0000000.00} + {4:0000000.00} => {5:0000000.00}", _2dto.X, xOffset, _2dto.X + xOffset, _2dto.Y, yOffset, _2dto.Y + yOffset);
+                                        int minX = _2dfrom.X < _2dto.X ? (int)Math.Floor((_2dfrom.X + xOffset) / tileSize) : (int)Math.Floor((_2dto.X + xOffset) / tileSize);
+                                        int maxX = _2dfrom.X > _2dto.X ? (int)Math.Floor((_2dfrom.X + xOffset) / tileSize) : (int)Math.Floor((_2dto.X + xOffset) / tileSize);
+                                        int minY = _2dfrom.Y < _2dto.Y ? (int)Math.Floor((_2dfrom.Y + yOffset) / tileSize) : (int)Math.Floor((_2dto.Y + yOffset) / tileSize);
+                                        int maxY = _2dfrom.Y > _2dto.Y ? (int)Math.Floor((_2dfrom.Y + yOffset) / tileSize) : (int)Math.Floor((_2dto.Y + yOffset) / tileSize);
+                                        for (int x = minX; x <= maxX; x++)
+                                            for (int y = minY; y <= maxY; y++)
+                                                if(x >= 0 && x < grid.GetLength(0) && y >= 0 && y < grid.GetLength(1))
+                                                    grid[x, y].Add(new Line(pen, _2dfrom, _2dto));
+                                    }
                                 }
+                                /*else if (currentWay.tags.ContainsKey("addr:housenumber") && !neededNodesIds.Contains(currentNodes[0]))
+                                {
+                                    //Addresses?
+                                }*/
+                                /*foreach (string key in currentWay.tags.Keys)
+                                {
+                                    //Streetnames?
+                                }*/
                             }
-                            if (reader.Name == "way")
+                            switch (reader.Name)
                             {
-                                currentNodes.Clear();
-                                currentWay.id = Convert.ToUInt64(reader.GetAttribute("id"));
-                                currentWay.tags.Clear();
-                                currentWay.nodes.Clear();
-                                nodeType = WAY;
+                                case "node":
+                                    nodeType = NODE;
+                                    break;
+                                case "way":
+                                    currentNodes.Clear();
+                                    currentWay.tags.Clear();
+                                    currentWay.id = Convert.ToUInt64(reader.GetAttribute("id"));
+                                    nodeType = WAY;
+                                    break;
+                                default:
+                                    nodeType = UNKNOWN;
+                                    break;
                             }
-                            else
-                                nodeType = UNKNOWN;
                         }
                         else if (reader.Depth == 2 && nodeType == WAY)
                         {
-                            state = READING;
-                            if(reader.Name == "nd")
+                            state = READINGNODES;
+                            switch (reader.Name)
                             {
-                                ulong id = Convert.ToUInt64(reader.GetAttribute("ref"));
-                                currentNodes.Add((_3DNode)_3dnodes[id]);
+                                case "nd":
+                                    currentNodes.Add(Convert.ToUInt64(reader.GetAttribute("ref")));
+                                    break;
+                                case "tag":
+                                    currentWay.tags.Add(reader.GetAttribute("k"), reader.GetAttribute("v"));
+                                    break;
                             }
-                            else if(reader.Name == "tag")
-                                currentWay.tags.Add(reader.GetAttribute("k"), reader.GetAttribute("v"));
                         }
                     }
                 }
-                reader.Close();
             }
 
             Directory.CreateDirectory(newPath);
@@ -154,7 +179,6 @@ namespace DotMaps.Tiles
                         {
                             foreach (Line line in grid[x, y])
                             {
-                                //Console.WriteLine("X:{0:F}\tY:{1:F}\tTO\tX:{2:F}\tY:{3:F}", line.from.coordinateX, line.from.coordinateY, line.to.coordinateX, line.to.coordinateY);
                                 float tileOffsetX = tileSize * x;
                                 float tileOffsetY = tileSize * y;
                                 PointF pointFrom = new PointF(line.from.X + xOffset - tileOffsetX, line.from.Y + yOffset - tileOffsetY);
