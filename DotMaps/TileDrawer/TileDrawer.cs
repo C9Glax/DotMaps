@@ -167,7 +167,13 @@ namespace DotMaps.Tiles
 
             Directory.CreateDirectory(newPath);
             File.Copy(path, newPath + "map.osm", true);
-            File.WriteAllText(newPath + "scale", scale.ToString());
+            File.WriteAllLines(newPath + "information", new string[] {
+                    "scale:" + scale.ToString(),
+                    "minlat:" + minLat.ToString(),
+                    "maxlat:" + maxLat.ToString(),
+                    "minlon:" + minLon.ToString(),
+                    "maxlon:" + maxLon.ToString()
+                });
             for (int x = 0; x < xAmount; x++)
             {
                 Directory.CreateDirectory(newPath + "\\" + x);
