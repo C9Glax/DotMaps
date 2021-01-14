@@ -142,13 +142,20 @@ namespace DotMaps.Utils
             Vector cameraVector = new Vector(
                 Math.Cos(DegreesToRadians(cameraCenter.lon)) * Math.Cos(DegreesToRadians(cameraCenter.lat)),
                 Math.Sin(DegreesToRadians(cameraCenter.lat)),
-                Math.Sin(DegreesToRadians(cameraCenter.lon)) * Math.Cos(DegreesToRadians(cameraCenter.lat)));
+                Math.Sin(DegreesToRadians(cameraCenter.lon)) * Math.Cos(DegreesToRadians(cameraCenter.lat))).Scale(scale * earthRadius);
 
-            Vector vectorFromCenter = new Vector()
-            {
+            Vector xVector = new Vector(Math.Sin(DegreesToRadians(cameraCenter.lon)),
+                0,
+                -Math.Cos(DegreesToRadians(cameraCenter.lon)));
+            Vector yVector = cameraVector.CrossProductWith(xVector);
 
-            }
+            Vector vectorFromCenter = xVector.Scale(node.X).Add(yVector.Scale(-node.Y));
 
+            Vector nodeVector = cameraVector.Add(vectorFromCenter);
+            nodeVector = nodeVector.Scale(1 / nodeVector.length);
+
+            double lat = RadiansToDegrees(Math.Asin(nodeVector.y));
+            return new _3DNode((float)lat, (float)0);
         }*/
 
         internal class Vector

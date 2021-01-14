@@ -67,11 +67,16 @@ namespace DotMaps.Tiles
         private void tile_MouseMove(object sender, MouseEventArgs e)
         {
             Point currentWindowLocation = new Point(Cursor.Position.X - this.Location.X, Cursor.Position.Y - this.Location.Y);
-            Point currentMapLocation = new Point(currentWindowLocation.X - ((PictureBox)sender).Parent.Left - 8 - ((PictureBox)sender).Parent.Width / 2, currentWindowLocation.Y - ((PictureBox)sender).Parent.Top - 31 - ((PictureBox)sender).Parent.Height / 2);
+            Point currentMapLocation = new Point(currentWindowLocation.X - ((PictureBox)sender).Parent.Left - 8, currentWindowLocation.Y - ((PictureBox)sender).Parent.Top - 31);
             toolStripStatusLabel3.Text = string.Format("| Mouseposition Window x,y: {0}, {1} | Mouseposition Map x,y: {2}, {3}", currentWindowLocation.X, currentWindowLocation.Y, currentMapLocation.X, currentMapLocation.Y);
 
-            _3DNode mouseCoordinates = Functions._3DNodeFrom2DNode(new _2DNode(currentMapLocation.X, currentMapLocation.Y), center, scale);
-            toolStripStatusLabel4.Text = string.Format("| Lat: {0:##.#####################} Lng: {1:##.#####################}", mouseCoordinates.lat, mouseCoordinates.lon);
+            //_3DNode mouseCoordinates = Functions._3DNodeFrom2DNode(new _2DNode(currentMapLocation.X, currentMapLocation.Y), center, scale);
+            int width = ((PictureBox)sender).Parent.Width;
+            int height = ((PictureBox)sender).Parent.Height;
+            float latdiff = this.maxLat - this.minLat;
+            float londiff = this.maxLon - this.minLon;
+            _3DNode mouseCoordinates = new _3DNode(this.maxLat - (latdiff / height) * currentMapLocation.Y, this.minLon + (londiff / width) * currentMapLocation.X);
+            toolStripStatusLabel4.Text = string.Format("| Lat: {0:##.#####################} Lng: {1:##.#####################}", mouseCoordinates.lat.ToString(), mouseCoordinates.lon.ToString());
 
             if (e.Button == MouseButtons.Left)
             {
@@ -92,28 +97,31 @@ namespace DotMaps.Tiles
             FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog();
             if (folderBrowserDialog.ShowDialog() == DialogResult.OK)
             {
-                string line = "";
-                using (StreamReader reader = new StreamReader(folderBrowserDialog.SelectedPath + "\\map.osm"))
-                    while (!line.Contains("bounds"))
-                        line = reader.ReadLine();
-                foreach (string part in line.Split(' '))
+                foreach(string info in File.ReadAllLines(folderBrowserDialog.SelectedPath + "\\information"))
                 {
-                    if (part.Contains("minlat"))
-                        this.minLat = Convert.ToSingle(part.Split('"')[1].Replace(".", ","));
-                    else if (part.Contains("minlon"))
-                        this.minLon = Convert.ToSingle(part.Split('"')[1].Replace(".", ","));
-                    else if (part.Contains("maxlat"))
-                        this.maxLat = Convert.ToSingle(part.Split('"')[1].Replace(".", ","));
-                    else if (part.Contains("maxlon"))
-                        this.maxLon = Convert.ToSingle(part.Split('"')[1].Replace(".",","));
+                    switch (info.Split(':')[0])
+                    {
+                        case "scale":
+                            this.scale = Convert.ToInt32(info.Split(':')[1]);
+                            break;
+                        case "minlat":
+                            this.minLat = Convert.ToSingle(info.Split(':')[1]);
+                            break;
+                        case "minlon":
+                            this.minLon = Convert.ToSingle(info.Split(':')[1]);
+                            break;
+                        case "maxlat":
+                            this.maxLat = Convert.ToSingle(info.Split(':')[1]);
+                            break;
+                        case "maxlon":
+                            this.maxLon = Convert.ToSingle(info.Split(':')[1]);
+                            break;
+                    }
                 }
 
-                float latDiff = maxLat - minLat;
-                float lonDiff = maxLon - minLon;
+                float latDiff = this.maxLat - this.minLat;
+                float lonDiff = this.maxLon - this.minLon;
                 this.center = new _3DNode(minLat + latDiff / 2, minLon + lonDiff / 2);
-
-                using (StreamReader reader = new StreamReader(folderBrowserDialog.SelectedPath + "\\scale"))
-                    this.scale = Convert.ToInt32(reader.ReadLine());
 
                 this.DrawTiles(folderBrowserDialog.SelectedPath);
             }
