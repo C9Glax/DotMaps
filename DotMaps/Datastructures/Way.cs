@@ -1,12 +1,11 @@
 ﻿using System.Collections.Generic;
-using System.Collections;
 
 namespace DotMaps.Datastructures
 {
     public struct Way
     {
         public ulong id;
-        public uint part;
+        public byte part;
         public List<Graph.GraphNode> nodes { get; }
         public Dictionary<string, string> tags { get; }
 
@@ -18,7 +17,7 @@ namespace DotMaps.Datastructures
             this.tags = new Dictionary<string, string>();
         }
 
-        public Way(ulong id, uint part)
+        public Way(ulong id, byte part)
         {
             this.id = id;
             this.part = part;

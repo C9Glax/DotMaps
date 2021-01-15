@@ -37,7 +37,7 @@ namespace DotMaps
                 }
             }
 
-            Hashtable _3dnodes = new Hashtable();
+            Hashtable graphNodes = new Hashtable();
             float minLat = float.MaxValue, maxLat = float.MinValue, minLon = float.MaxValue, maxLon = float.MinValue;
 
             StreamReader stream = new StreamReader(path, System.Text.Encoding.UTF8);
@@ -49,10 +49,10 @@ namespace DotMaps
                 {
                     if (reader.NodeType != XmlNodeType.EndElement && reader.Depth == 1 && reader.Name == "node")
                     {
-                        ulong id = Convert.ToUInt64(reader.GetAttribute("id"));
+                        uint id = Convert.ToUInt32(reader.GetAttribute("id"));
                         float lat = Convert.ToSingle(reader.GetAttribute("lat").Replace('.', ','));
                         float lon = Convert.ToSingle(reader.GetAttribute("lon").Replace('.', ','));
-                        _3dnodes.Add(id, new _3DNode(id, lat, lon));
+                        graphNodes.Add(id, new Graph.GraphNode(id, lat, lon));
                         minLat = lat < minLat ? lat : minLat;
                         minLon = lon < minLon ? lon : minLon;
                         maxLat = lat > maxLat ? lat : maxLat;
@@ -62,12 +62,12 @@ namespace DotMaps
                 reader.Close();
                 stream.Close();
             }
-            _3DNode center = new _3DNode(0, maxLat - minLat, maxLon - minLon);
+            _3DNode center = new _3DNode(maxLat - minLat, maxLon - minLon);
 
 
             float minY = float.MaxValue, maxY = float.MinValue, minX = float.MaxValue, maxX = float.MinValue;
             Hashtable _2dnodes = new Hashtable();
-            foreach (_3DNode _3dnode in _3dnodes.Values)
+            foreach (_3DNode _3dnode in graphNodes.Values)
             {
                 _2DNode newNode = Functions._2DNodeFrom3DNode(_3dnode, center, scale);
                 _2dnodes.Add(newNode.id, newNode);

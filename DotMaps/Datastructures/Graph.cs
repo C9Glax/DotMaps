@@ -17,11 +17,11 @@ namespace DotMaps.Datastructures
             this.nodes.Add(node.id, node);
         }
 
-        public Hashtable GetNodes()
+        public GraphNode[] GetNodes()
         {
-            /*Node[] ret = new Node[this.nodes.Count];
-            this.nodes.Values.CopyTo(ret, 0);*///REWRITE
-            return this.nodes;
+            GraphNode[] ret = new GraphNode[this.nodes.Count];
+            this.nodes.Values.CopyTo(ret, 0);
+            return ret;
         }
 
         public GraphNode GetNode(ulong id)
@@ -39,11 +39,16 @@ namespace DotMaps.Datastructures
             return this.nodes.Count;
         }
 
+        public void RemoveNode(ulong id)
+        {
+            this.nodes.Remove(id);
+        }
+
         public class GraphNode
         {
             public ulong id { get; }
-            public float lat { get; }
-            public float lon { get; }
+
+            public _3DNode position { get; }
             
             private List<Connection> connections { get; }
 
@@ -54,8 +59,16 @@ namespace DotMaps.Datastructures
             public GraphNode(ulong id, float lat, float lon)
             {
                 this.id = id;
-                this.lat = lat;
-                this.lon = lon;
+                this.position = new _3DNode(lat, lon);
+                this.connections = new List<Connection>();
+                this.previous = null;
+                this.weight = double.MaxValue;
+            }
+
+            public GraphNode(uint id, _3DNode position)
+            {
+                this.id = id;
+                this.position = position;
                 this.connections = new List<Connection>();
                 this.previous = null;
                 this.weight = double.MaxValue;
@@ -80,13 +93,16 @@ namespace DotMaps.Datastructures
             public string name { get; }
             public _3DNode[] coordinates { get; }
 
-            public Connection(double distance, float timeNeeded, GraphNode neighbor, string name, _3DNode[] coordinates)
+            public string roadType { get; }
+
+            public Connection(double distance, float timeNeeded, GraphNode neighbor, string name, _3DNode[] coordinates, string roadType)
             {
                 this.distance = distance;
                 this.timeNeeded = timeNeeded;
                 this.neighbor = neighbor;
                 this.name = name;
                 this.coordinates = coordinates;
+                this.roadType = roadType;
             }
         }
     }
