@@ -8,7 +8,17 @@ namespace DotMaps.Converter
 {
     public class Splitter
     {
-        public void SplitWays(Converter parent, string path, string newPath)
+        /*
+         * Event Handler
+         */
+        public event StatusEventHandler OnStatusChange;
+        public class StatusChangedEventArgs : EventArgs
+        {
+            public string status;
+        }
+        public delegate void StatusEventHandler(object sender, StatusChangedEventArgs e);
+
+        public void SplitWays(string path, string newPath)
         {
             const byte UNKNOWN = 0, NODE = 1, WAY = 2, READINGNODES = 1, NODEREAD = 0;
             byte nodeType = UNKNOWN, state = NODEREAD;
@@ -44,7 +54,10 @@ namespace DotMaps.Converter
             reader.MoveToContent();
             while (reader.Read())
             {
-                parent.status = "Counting occurances of nodes: " + ++totalLines + " Nodetype: " + reader.Name + "   ";
+                this.OnStatusChange?.Invoke(this, new StatusChangedEventArgs
+                {
+                    status = string.Format("Counting occurances of nodes: {0}\t\tNodetype:{1}", ++totalLines, reader.Name)
+                });
                 if (reader.NodeType != XmlNodeType.EndElement)
                 {
                     if (reader.Depth == 1)
@@ -76,7 +89,7 @@ namespace DotMaps.Converter
                                 nodeType = WAY;
                                 currentNodes.Clear();
                                 currentWay.tags.Clear();
-                                currentWay.id = Convert.ToUInt64(reader.GetAttribute("id"));
+                                currentWay.id = Convert.ToUInt32(reader.GetAttribute("id"));
                                 break;
                             case "bounds":
                                 nodeType = UNKNOWN;
@@ -119,7 +132,10 @@ namespace DotMaps.Converter
             reader.MoveToContent();
             while (reader.Read())
             {
-                parent.status = "Splitting ways: " + ++line + "/" + totalLines ;
+                this.OnStatusChange?.Invoke(this, new StatusChangedEventArgs
+                {
+                    status = string.Format("Splitting ways: {0}/{1}", ++line, totalLines)
+                });
                 if (reader.Depth == 1)
                 {
                     if (state == READINGNODES && nodeType == WAY)
@@ -185,7 +201,7 @@ namespace DotMaps.Converter
                             nodeType = WAY;
                             currentNodes.Clear();
                             currentWay.tags.Clear();
-                            currentWay.id = Convert.ToUInt64(reader.GetAttribute("id"));
+                            currentWay.id = Convert.ToUInt32(reader.GetAttribute("id"));
                             break;
                         default:
                             nodeType = UNKNOWN;

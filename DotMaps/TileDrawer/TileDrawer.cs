@@ -140,7 +140,7 @@ namespace DotMaps.Tiles
                                 case "way":
                                     currentNodes.Clear();
                                     currentWay.tags.Clear();
-                                    currentWay.id = Convert.ToUInt64(reader.GetAttribute("id"));
+                                    currentWay.id = Convert.ToUInt32(reader.GetAttribute("id"));
                                     nodeType = WAY;
                                     break;
                                 default:

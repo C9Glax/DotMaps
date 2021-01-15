@@ -25,14 +25,14 @@ namespace DotMaps.Converter
             switch (choice)
             {
                 case 'l':
-                    new Slimmer().SlimOSMFormat(this, path, newPath);
+                    new Slimmer().SlimOSMFormat(path, newPath);
                     break;
                 case 'p':
-                    new Splitter().SplitWays(this, path, newPath);
+                    new Splitter().SplitWays(path, newPath);
                     break;
                 case 'b':
-                    new Slimmer().SlimOSMFormat(this, path, newPath + ".temp");
-                    new Splitter().SplitWays(this, newPath + ".temp", newPath);
+                    new Slimmer().SlimOSMFormat(path, newPath + ".temp");
+                    new Splitter().SplitWays(newPath + ".temp", newPath);
                     File.Delete(newPath + ".temp");
                     break;
                 default:

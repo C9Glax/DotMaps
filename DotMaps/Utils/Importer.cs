@@ -9,10 +9,38 @@ namespace DotMaps.Utils
 {
     public class Importer
     {
+
+        /*
+         * Event Handler
+         */
+        public event StatusEventHandler OnStatusChange;
+        public class StatusChangedEventArgs : EventArgs
+        {
+            public string status;
+        }
+        public delegate void StatusEventHandler(object sender, StatusChangedEventArgs e);
+
+        public event ProgressEventHandler OnProgress;
+        public class ProgressEventArgs : EventArgs
+        {
+            public int progress;
+        }
+        public delegate void ProgressEventHandler(object sender, ProgressEventArgs e);
+
         private enum NodeType { UNKNOWN, NODE, WAY }
-        public static Graph ImportOSM(string path)
+        public Graph ImportOSM(string path)
         {
             Graph retGraph = new Graph();
+
+
+            this.OnProgress?.Invoke(this, new ProgressEventArgs
+            {
+                progress = 0
+            });
+            this.OnStatusChange?.Invoke(this, new StatusChangedEventArgs
+            {
+                status = "Importing Nodes and Counting Occurances..."
+            });
 
             Dictionary<ulong, uint> nodeOccurances = new Dictionary<ulong, uint>();
             Hashtable allNodes = new Hashtable();
@@ -60,7 +88,11 @@ namespace DotMaps.Utils
 
             Way currentWay = new Way(0);
 
-            
+
+            this.OnStatusChange?.Invoke(this, new StatusChangedEventArgs
+            {
+                status = "Splitting and Importing Ways"
+            });
             NodeType nodeType = NodeType.UNKNOWN;
             using (XmlReader reader = XmlReader.Create(path, readerSettings))
             {
@@ -77,14 +109,14 @@ namespace DotMaps.Utils
                                 if (currentWay.tags.ContainsKey("maxspeed"))
                                     try
                                     {
-                                        speed = Convert.ToInt32((string)currentWay.tags["maxspeed"]);
+                                        speed = Convert.ToInt32(currentWay.tags["maxspeed"]);
                                     }
                                     catch (FormatException)
                                     {
-                                        Console.WriteLine("Maxspeed {0} not implemented", (string)currentWay.tags["maxspeed"]);
+                                        Console.WriteLine("Maxspeed {0} not implemented", currentWay.tags["maxspeed"]);
                                     }
-                                else if (speeds.ContainsKey((string)currentWay.tags["highway"]))
-                                    speed = (int)speeds[(string)currentWay.tags["highway"]];
+                                else if (speeds.ContainsKey(currentWay.tags["highway"]))
+                                    speed = (int)speeds[currentWay.tags["highway"]];
                                 string name = "";
                                 if (currentWay.tags.ContainsKey("ref"))
                                     name = currentWay.tags["ref"];
@@ -100,10 +132,10 @@ namespace DotMaps.Utils
                                     if (nodeOccurances[currentWay.nodes[i].id] > 1)
                                     {
                                         Graph.GraphNode intersection = retGraph.GetNode(currentWay.nodes[i].id);
-                                        if (!currentWay.tags.ContainsKey("oneway") || ((string)currentWay.tags["oneway"]) == "no")
-                                            start.AddConnection(new Graph.Connection(distance, (float)distance / speed, intersection, name, coords.ToArray()));
+                                        if (!currentWay.tags.ContainsKey("oneway") || (currentWay.tags["oneway"]) == "no")
+                                            start.AddConnection(new Graph.Connection(distance, (float)distance / speed, intersection, name, coords.ToArray(), currentWay.tags["highway"]));
                                         coords.Reverse();
-                                        intersection.AddConnection(new Graph.Connection(distance, (float)distance / speed, start, name, coords.ToArray()));
+                                        intersection.AddConnection(new Graph.Connection(distance, (float)distance / speed, start, name, coords.ToArray(), currentWay.tags["highway"]));
 
                                         start = intersection;
                                         distance = 0;
@@ -111,18 +143,19 @@ namespace DotMaps.Utils
                                     }
                                     else
                                     {
-                                        float lat = currentWay.nodes[i].lat;
-                                        float lon = currentWay.nodes[i].lon;
+                                        float lat = currentWay.nodes[i].position.lat;
+                                        float lon = currentWay.nodes[i].position.lon;
                                         distance += coords.Count > 0 ? Functions.DistanceBetweenCoordinates(coords[coords.Count - 1].lat, coords[coords.Count - 1].lon, lat, lon) : 0;
                                         coords.Add(new _3DNode(lat, lon));
+                                        retGraph.RemoveNode(currentWay.nodes[i].id);
                                     }
                                 }
 
                                 Graph.GraphNode goal = retGraph.GetNode(currentWay.nodes[currentWay.nodes.Count - 1].id);
                                 if (!currentWay.tags.ContainsKey("oneway") || ((string)currentWay.tags["oneway"]) == "no")
-                                    start.AddConnection(new Graph.Connection(distance, (float)distance / speed, goal, name, coords.ToArray()));
+                                    start.AddConnection(new Graph.Connection(distance, (float)distance / speed, goal, name, coords.ToArray(), currentWay.tags["highway"]));
                                 coords.Reverse();
-                                goal.AddConnection(new Graph.Connection(distance, (float)distance / speed, start, name, coords.ToArray()));
+                                goal.AddConnection(new Graph.Connection(distance, (float)distance / speed, start, name, coords.ToArray(), currentWay.tags["highway"]));
                             }
                         }
                         switch (reader.Name)
@@ -134,7 +167,7 @@ namespace DotMaps.Utils
                                 nodeType = NodeType.WAY;
                                 currentWay.nodes.Clear();
                                 currentWay.tags.Clear();
-                                currentWay.id = Convert.ToUInt64(reader.GetAttribute("id"));
+                                currentWay.id = Convert.ToUInt32(reader.GetAttribute("id"));
                                 break;
                             default:
                                 nodeType = NodeType.UNKNOWN;

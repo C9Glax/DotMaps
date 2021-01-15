@@ -67,7 +67,7 @@ namespace DotMaps.Tiles
         private void tile_MouseMove(object sender, MouseEventArgs e)
         {
             Point currentWindowLocation = new Point(Cursor.Position.X - this.Location.X, Cursor.Position.Y - this.Location.Y);
-            Point currentMapLocation = new Point(currentWindowLocation.X - ((PictureBox)sender).Parent.Left - 8, currentWindowLocation.Y - ((PictureBox)sender).Parent.Top - 31);
+            Point currentMapLocation = new Point(currentWindowLocation.X - ((PictureBox)sender).Parent.Left - 8, currentWindowLocation.Y - ((PictureBox)sender).Parent.Top - 32);
             toolStripStatusLabel3.Text = string.Format("| Mouseposition Window x,y: {0}, {1} | Mouseposition Map x,y: {2}, {3}", currentWindowLocation.X, currentWindowLocation.Y, currentMapLocation.X, currentMapLocation.Y);
 
             //_3DNode mouseCoordinates = Functions._3DNodeFrom2DNode(new _2DNode(currentMapLocation.X, currentMapLocation.Y), center, scale);

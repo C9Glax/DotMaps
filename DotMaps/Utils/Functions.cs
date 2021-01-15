@@ -11,6 +11,21 @@ namespace DotMaps.Utils
             return DistanceBetweenCoordinates(node1.lat, node1.lon, node2.lat, node2.lon);
         }
 
+        public static double DistanceBetweenNodes(Graph.GraphNode node1, Graph.GraphNode node2)
+        {
+            return DistanceBetweenCoordinates(node1.position.lat, node1.position.lon, node2.position.lat, node2.position.lon);
+        }
+
+        public static double DistanceBetweenNodes(Graph.GraphNode node1, _3DNode node2)
+        {
+            return DistanceBetweenCoordinates(node1.position.lat, node1.position.lon, node2.lat, node2.lon);
+        }
+
+        public static double DistanceBetweenNodes(_3DNode node1, Graph.GraphNode node2)
+        {
+            return DistanceBetweenCoordinates(node1.lat, node1.lon, node2.position.lat, node2.position.lon);
+        }
+
         public static double DistanceBetweenCoordinates(float lat1, float lon1, float lat2, float lon2)
         {
             double differenceLat = DegreesToRadians(lat2 - lat1);
@@ -53,45 +68,10 @@ namespace DotMaps.Utils
             return angle;
         }
 
-        /* OLD METHOD
-        public static _2DNode _2DNodeFrom3DNode(_3DNode node, _3DNode cameraCenter, int scale)
+        public static _2DNode _2DNodeFromGraphNode(Graph.GraphNode node, _3DNode center, int scale)
         {
-            //Node Position in 3D space
-            double ax = Math.Cos(DegreesToRadians(node.lon)) * Math.Cos(DegreesToRadians(node.lat));
-            double ay = Math.Sin(DegreesToRadians(node.lat));
-            double az = Math.Sin(DegreesToRadians(node.lon)) * Math.Cos(DegreesToRadians(node.lat));
-
-            //Camera Position
-            //double cx = 0;
-            //double cy = 0;
-            //double cz = 0;
-
-            //Camera Rotation
-            double ox = DegreesToRadians(-cameraCenter.lat);
-            double oy = DegreesToRadians(90 - cameraCenter.lon);
-            //double oz = 0; 
-
-            //Screen Position
-            //double ex = 0;
-            //double ey = 0;
-            double ez = -(scale + 1);
-
-            //double x = ax - cx;
-            //double y = ay - cy;
-            //double z = az;// - cz;
-            //double dx = Math.Cos(oy) * (Math.Sin(oz) * y + Math.Cos(oz) * x) - Math.Sin(oy) * z;
-            double dx = Math.Cos(oy) * ax - Math.Sin(oy) * az;
-            //double dy = Math.Sin(ox) * (Math.Cos(oy) * z + Math.Sin(oy) * (Math.Sin(oz) * y + Math.Cos(oz) * x)) + Math.Cos(ox) * (Math.Cos(oz) * y - Math.Sin(oz) * x);
-            double dy = Math.Sin(ox) * (Math.Cos(oy) * az + Math.Sin(oy) * ax) + Math.Cos(ox) * ay;
-            //double dz = Math.Cos(ox) * (Math.Cos(oy) * z + Math.Sin(oy) * (Math.Sin(oz) * y + Math.Cos(oz) * x)) - Math.Sin(ox) * (Math.Cos(oz) * y - Math.Sin(oz) * x);
-            double dz = Math.Cos(ox) * (Math.Cos(oy) * az + Math.Sin(oy) * ax) - Math.Sin(ox) * ay;
-
-            //Node Position on Screen from center
-            double bx = (ez / dz) * dx;// + ex;
-            double by = (ez / dz) * dy;// + ey;
-
-            return new _2DNode((float)bx, (float)by);
-        }*/
+            return _2DNodeFrom3DNode(new _3DNode(node.position.lat, node.position.lon), center, scale);
+        }
 
         public static _2DNode _2DNodeFrom3DNode(_3DNode node, _3DNode cameraCenter, int scale)
         {
@@ -101,14 +81,12 @@ namespace DotMaps.Utils
                 Math.Cos(DegreesToRadians(node.lon)) * Math.Cos(DegreesToRadians(node.lat)),
                 Math.Sin(DegreesToRadians(node.lat)),
                 Math.Sin(DegreesToRadians(node.lon)) * Math.Cos(DegreesToRadians(node.lat)));
-            //Console.WriteLine("Node \tx: {0:0.000000000}\t\ty: {1:0.000000000}\t\tz: {2:0.000000000}", nodeVector.x, nodeVector.y, nodeVector.z);
 
             //Camera Norm-Vector
             Vector cameraVector = new Vector(
                 Math.Cos(DegreesToRadians(cameraCenter.lon)) * Math.Cos(DegreesToRadians(cameraCenter.lat)),
                 Math.Sin(DegreesToRadians(cameraCenter.lat)),
                 Math.Sin(DegreesToRadians(cameraCenter.lon)) * Math.Cos(DegreesToRadians(cameraCenter.lat))).Scale(scale*earthRadius);
-            //Console.WriteLine("Cam \tx: {0:000000000.00}\t\ty: {1:000000000.00}\t\tz: {2:000000000.00}", cameraVector.x, cameraVector.y, cameraVector.z);
 
             if (cameraVector.DotProductWith(nodeVector) == 0) //Node can't be projected onto plane
                 Environment.Exit(-1);
@@ -128,9 +106,6 @@ namespace DotMaps.Utils
             double y = vectorFromCenter.length * Math.Sin(DegreesToRadians(angle)) / Math.Sin(DegreesToRadians(90));
             if (node.lat > cameraCenter.lat)
                 y = -y;
-
-
-            //Console.WriteLine("\tA: {0:000}\t\t\tx: {1:00000000}\t\ty: {2:00000000}", angle,x,y);
 
             return new _2DNode((float)x, (float)y);
         }
