@@ -84,7 +84,7 @@ namespace DotMaps.Tiles
                 {
                     string key = type.Split(',')[0];
                     if (!pens.ContainsKey(key))
-                        pens.Add(key, new Pen(Color.FromName(type.Split(',')[2]), Convert.ToInt32(type.Split(',')[3])));
+                        pens.Add(key, new Pen(Color.FromName(type.Split(',')[2]), Convert.ToInt32(type.Split(',')[1])));
                 }
 
             using (XmlReader reader = XmlReader.Create(path, settings))
