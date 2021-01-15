@@ -5,7 +5,7 @@ namespace DotMaps.Datastructures
 {
     public class Graph
     {
-        private Hashtable nodes;
+        private Hashtable nodes { get; }
         public float minLat, maxLat, minLon, maxLon;
         public Graph()
         {
@@ -45,7 +45,7 @@ namespace DotMaps.Datastructures
             public float lat { get; }
             public float lon { get; }
             
-            private List<Connection> connections;
+            private List<Connection> connections { get; }
 
             public GraphNode previous;
 
@@ -78,9 +78,9 @@ namespace DotMaps.Datastructures
             public float timeNeeded { get; }
             public GraphNode neighbor { get; }
             public string name { get; }
-            public List<_3DNode> coordinates { get; }
+            public _3DNode[] coordinates { get; }
 
-            public Connection(double distance, float timeNeeded, GraphNode neighbor, string name, List<_3DNode> coordinates)
+            public Connection(double distance, float timeNeeded, GraphNode neighbor, string name, _3DNode[] coordinates)
             {
                 this.distance = distance;
                 this.timeNeeded = timeNeeded;
