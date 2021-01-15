@@ -9,133 +9,163 @@ namespace DotMaps.Utils
 {
     public class Importer
     {
-        public static void  ReadWaysFromOSMFileIntoConnections(string path, ref Graph graph)
+        private enum NodeType { UNKNOWN, NODE, WAY }
+        public static Graph ImportOSM(string path)
         {
-            const byte UNKNOWN = 0, NODE = 1, WAY = 2, READING = 1, DONE = 0;
-            byte nodeType = UNKNOWN, state = DONE;
+            Graph retGraph = new Graph();
 
-            List<string> copykeys = new List<string>();
-            foreach (string key in File.ReadAllLines("copykeys.txt"))
-                copykeys.Add(key);
-            Hashtable speeds = new Hashtable();
-            foreach (string speed in File.ReadAllLines("speeds.txt"))
-                speeds.Add(speed.Split(',')[0], Convert.ToInt32(speed.Split(',')[1]));
-
-            Dictionary<ulong, Graph.GraphNode> tempNodes = new Dictionary<ulong, Graph.GraphNode>();
-
-            XmlReaderSettings settings = new XmlReaderSettings()
+            Dictionary<ulong, uint> nodeOccurances = new Dictionary<ulong, uint>();
+            Hashtable allNodes = new Hashtable();
+            XmlReaderSettings readerSettings = new XmlReaderSettings()
             {
                 IgnoreWhitespace = true
             };
-
-            uint wayCount = 0;
-            Way currentWay = new Way(wayCount);
-            using (XmlReader reader = XmlReader.Create(path, settings))
+            using (XmlReader reader = XmlReader.Create(path, readerSettings))
             {
+                reader.MoveToContent();
                 while (reader.Read())
                 {
                     if (reader.NodeType != XmlNodeType.EndElement)
                     {
-                        if (reader.Depth == 1)
+                        switch (reader.Name)
                         {
-                            if (state == READING)
-                            {
-                                state = DONE;
-                                if (nodeType == WAY)
-                                {
-                                    if (currentWay.tags.ContainsKey("highway"))
-                                    {
-                                        Graph.GraphNode start = currentWay.nodes[0];
-                                        Graph.GraphNode end = currentWay.nodes[currentWay.nodes.Count - 1];
-                                        if (!graph.ContainsNode(start.id))
-                                            graph.AddNode(start);
-                                        if (!graph.ContainsNode(end.id))
-                                            graph.AddNode(end);
-
-                                        List<_3DNode> coordinates = new List<_3DNode>();
-                                        double distance = 0.0;
-                                        for (int i = 1; i < currentWay.nodes.Count; i++)
-                                        {
-                                            Graph.GraphNode fromNode = currentWay.nodes[i];
-                                            Graph.GraphNode toNode = currentWay.nodes[i - 1];
-                                            distance += Functions.DistanceBetweenCoordinates(fromNode.lat, fromNode.lon, toNode.lat, toNode.lon);
-                                            coordinates.Add(new _3DNode(fromNode.lat, fromNode.lon));
-                                        }
-                                        int speed = (int)speeds["default"];
-                                        if (currentWay.tags.ContainsKey("highway") && speeds.ContainsKey((string)currentWay.tags["highway"]))
-                                            speed = (int)speeds[(string)currentWay.tags["highway"]];
-                                        if (currentWay.tags.ContainsKey("maxspeed"))
-                                            try
-                                            {
-                                                speed = Convert.ToInt32((string)currentWay.tags["maxspeed"]);
-                                            }
-                                            catch (FormatException)
-                                            {
-                                                Console.WriteLine("Maxspeed {0} not implemented", (string)currentWay.tags["maxspeed"]);
-                                            }
-                                        float timeNeeded = (float)distance / speed;
-
-                                        string name = "";
-                                        if (currentWay.tags.ContainsKey("ref"))
-                                            name = (string)currentWay.tags["ref"];
-                                        else if (currentWay.tags.ContainsKey("name"))
-                                            name = (string)currentWay.tags["name"]; ;
-
-                                        end.AddConnection(new Graph.Connection(distance, timeNeeded, start, name, coordinates));
-                                        if (!currentWay.tags.ContainsKey("oneway") || ((string)currentWay.tags["oneway"]) == "no")
-                                            start.AddConnection(new Graph.Connection(distance, timeNeeded, end, name, coordinates));
-                                    }
-                                }
-                            }
-                            switch (reader.Name)
-                            {
-                                case "node":
-                                    nodeType = NODE;
-                                    ulong id = Convert.ToUInt64(reader.GetAttribute("id"));
-                                    float lat = Convert.ToSingle(reader.GetAttribute("lat"));
-                                    float lon = Convert.ToSingle(reader.GetAttribute("lon"));
-                                    tempNodes.Add(id, new Graph.GraphNode(id, lat, lon));
-                                    break;
-                                case "way":
-                                    currentWay = new Way(++wayCount);
-                                    nodeType = WAY;
-                                    break;
-                                default:
-                                    nodeType = UNKNOWN;
-                                    break;
-                            }
-                        }
-                        else if (reader.Depth == 2 && nodeType == WAY)
-                        {
-                            state = READING;
-                            switch (reader.Name)
-                            {
-                                case "nd":
-                                    ulong id = Convert.ToUInt64(reader.GetAttribute("ref"));
-                                    currentWay.nodes.Add(tempNodes[id]);
-                                    break;
-                                case "tag":
-                                    string key = reader.GetAttribute("k");
-                                    if(copykeys.Contains(key))
-                                        currentWay.tags.Add(key, reader.GetAttribute("v").ToString());
-                                    break;
-                            }
+                            case "node":
+                                ulong id = Convert.ToUInt64(reader.GetAttribute("id"));
+                                float lat = Convert.ToSingle(reader.GetAttribute("lat").Replace(".", ","));
+                                float lon = Convert.ToSingle(reader.GetAttribute("lon").Replace(".", ","));
+                                allNodes.Add(id, new Graph.GraphNode(id, lat, lon));
+                                break;
+                            case "bounds":
+                                retGraph.minLat = Convert.ToSingle(reader.GetAttribute("minlat").Replace(".", ","));
+                                retGraph.minLon = Convert.ToSingle(reader.GetAttribute("minlon").Replace(".", ","));
+                                retGraph.maxLat = Convert.ToSingle(reader.GetAttribute("maxlat").Replace(".", ","));
+                                retGraph.maxLon = Convert.ToSingle(reader.GetAttribute("maxlon").Replace(".", ","));
+                                break;
+                            case "nd":
+                                ulong nodeID = Convert.ToUInt64(reader.GetAttribute("ref"));
+                                if (!nodeOccurances.ContainsKey(nodeID))
+                                    nodeOccurances.Add(nodeID, 1);
+                                else
+                                    nodeOccurances[nodeID]++;
+                                break;
                         }
                     }
                 }
                 reader.Close();
             }
-        }
-        public static Graph ReadNodesIntoNewGraph(Hashtable nodes)
-        {
-            Graph map = new Graph();
-            return ReadNodesIntoGraph(nodes, map);
-        }
-        public static Graph ReadNodesIntoGraph(Hashtable nodes, Graph graph)
-        {
-            foreach (Graph.GraphNode node in nodes.Values)
-                graph.AddNode(node);
-            return graph;
+
+            Hashtable speeds = new Hashtable();
+            foreach (string speed in File.ReadAllLines("speeds.txt"))
+                speeds.Add(speed.Split(',')[0], Convert.ToInt32(speed.Split(',')[1]));
+
+            Way currentWay = new Way(0);
+
+            
+            NodeType nodeType = NodeType.UNKNOWN;
+            using (XmlReader reader = XmlReader.Create(path, readerSettings))
+            {
+                reader.MoveToContent();
+                while (reader.Read())
+                {
+                    if (reader.Depth == 1)
+                    {
+                        if (nodeType == NodeType.WAY)
+                        {
+                            if (currentWay.tags.ContainsKey("highway") && currentWay.nodes.Count > 1)
+                            {
+                                int speed = (int)speeds["default"];
+                                if (currentWay.tags.ContainsKey("maxspeed"))
+                                    try
+                                    {
+                                        speed = Convert.ToInt32((string)currentWay.tags["maxspeed"]);
+                                    }
+                                    catch (FormatException)
+                                    {
+                                        Console.WriteLine("Maxspeed {0} not implemented", (string)currentWay.tags["maxspeed"]);
+                                    }
+                                else if (speeds.ContainsKey((string)currentWay.tags["highway"]))
+                                    speed = (int)speeds[(string)currentWay.tags["highway"]];
+                                string name = "";
+                                if (currentWay.tags.ContainsKey("ref"))
+                                    name = currentWay.tags["ref"];
+                                else if (currentWay.tags.ContainsKey("name"))
+                                    name = currentWay.tags["name"]; ;
+
+                                Graph.GraphNode start = retGraph.GetNode(currentWay.nodes[0].id);
+                                List<_3DNode> coords = new List<_3DNode>();
+                                double distance = 0.0;
+
+                                for (int i = 1; i < currentWay.nodes.Count - 1; i++)
+                                {
+                                    if (nodeOccurances[currentWay.nodes[i].id] > 1)
+                                    {
+                                        Graph.GraphNode intersection = retGraph.GetNode(currentWay.nodes[i].id);
+                                        if (!currentWay.tags.ContainsKey("oneway") || ((string)currentWay.tags["oneway"]) == "no")
+                                            start.AddConnection(new Graph.Connection(distance, (float)distance / speed, intersection, name, coords.ToArray()));
+                                        coords.Reverse();
+                                        intersection.AddConnection(new Graph.Connection(distance, (float)distance / speed, start, name, coords.ToArray()));
+
+                                        start = intersection;
+                                        distance = 0;
+                                        coords.Clear();
+                                    }
+                                    else
+                                    {
+                                        float lat = currentWay.nodes[i].lat;
+                                        float lon = currentWay.nodes[i].lon;
+                                        distance += coords.Count > 0 ? Functions.DistanceBetweenCoordinates(coords[coords.Count - 1].lat, coords[coords.Count - 1].lon, lat, lon) : 0;
+                                        coords.Add(new _3DNode(lat, lon));
+                                    }
+                                }
+
+                                Graph.GraphNode goal = retGraph.GetNode(currentWay.nodes[currentWay.nodes.Count - 1].id);
+                                if (!currentWay.tags.ContainsKey("oneway") || ((string)currentWay.tags["oneway"]) == "no")
+                                    start.AddConnection(new Graph.Connection(distance, (float)distance / speed, goal, name, coords.ToArray()));
+                                coords.Reverse();
+                                goal.AddConnection(new Graph.Connection(distance, (float)distance / speed, start, name, coords.ToArray()));
+                            }
+                        }
+                        switch (reader.Name)
+                        {
+                            case "node":
+                                nodeType = NodeType.NODE;
+                                break;
+                            case "way":
+                                nodeType = NodeType.WAY;
+                                currentWay.nodes.Clear();
+                                currentWay.tags.Clear();
+                                currentWay.id = Convert.ToUInt64(reader.GetAttribute("id"));
+                                break;
+                            default:
+                                nodeType = NodeType.UNKNOWN;
+                                break;
+                        }
+                    }
+                    else if (reader.Depth == 2 && nodeType == NodeType.WAY)
+                    {
+                        switch (reader.Name)
+                        {
+                            case "nd":
+                                ulong id = Convert.ToUInt64(reader.GetAttribute("ref"));
+                                if (retGraph.ContainsNode(id))
+                                    currentWay.nodes.Add(retGraph.GetNode(id));
+                                else if (allNodes.ContainsKey(id))
+                                {
+                                    retGraph.AddNode((Graph.GraphNode)allNodes[id]);
+                                    allNodes.Remove(id);
+                                    currentWay.nodes.Add(retGraph.GetNode(id));
+                                }
+                                break;
+                            case "tag":
+                                currentWay.tags.Add(reader.GetAttribute("k"), reader.GetAttribute("v").ToString());
+                                break;
+                        }
+                    }
+                }
+                reader.Close();
+            }
+            
+            return retGraph;
         }
     }
 }
