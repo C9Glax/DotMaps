@@ -1,7 +1,7 @@
 ﻿
 namespace DotMaps
 {
-    partial class TileDisplay
+    partial class MapDisplay
     {
         /// <summary>
         /// Erforderliche Designervariable.
@@ -41,10 +41,8 @@ namespace DotMaps
             this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.slimToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.splitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.scaleSlider = new System.Windows.Forms.TrackBar();
             this.statusStrip.SuspendLayout();
             this.menuStrip1.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.scaleSlider)).BeginInit();
             this.SuspendLayout();
             // 
             // statusStrip
@@ -141,32 +139,18 @@ namespace DotMaps
             this.splitToolStripMenuItem.Text = "Split";
             this.splitToolStripMenuItem.Click += new System.EventHandler(this.splitToolStripMenuItem_Click);
             // 
-            // scaleSlider
-            // 
-            this.scaleSlider.LargeChange = 50;
-            this.scaleSlider.Location = new System.Drawing.Point(12, 27);
-            this.scaleSlider.Maximum = 250;
-            this.scaleSlider.Minimum = 5;
-            this.scaleSlider.Name = "scaleSlider";
-            this.scaleSlider.Size = new System.Drawing.Size(104, 45);
-            this.scaleSlider.SmallChange = 10;
-            this.scaleSlider.TabIndex = 4;
-            this.scaleSlider.TickFrequency = 50;
-            this.scaleSlider.Value = 50;
-            this.scaleSlider.ValueChanged += new System.EventHandler(this.scaleSlider_ValueChanged);
-            // 
-            // TileDisplay
+            // MapDisplay
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.Black;
             this.ClientSize = new System.Drawing.Size(800, 450);
-            this.Controls.Add(this.scaleSlider);
             this.Controls.Add(this.statusStrip);
             this.Controls.Add(this.menuStrip1);
             this.MainMenuStrip = this.menuStrip1;
-            this.Name = "TileDisplay";
+            this.Name = "MapDisplay";
             this.Text = "TileDisplay";
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.TileDisplay_FormClosed);
             this.MouseDown += new System.Windows.Forms.MouseEventHandler(this.TileDisplay_MouseDown);
             this.MouseMove += new System.Windows.Forms.MouseEventHandler(this.TileDisplay_MouseMove);
             this.MouseUp += new System.Windows.Forms.MouseEventHandler(this.TileDisplay_MouseUp);
@@ -174,7 +158,6 @@ namespace DotMaps
             this.statusStrip.PerformLayout();
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.scaleSlider)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -189,7 +172,6 @@ namespace DotMaps
         private System.Windows.Forms.ToolStripStatusLabel latLngLabel;
         private System.Windows.Forms.MenuStrip menuStrip1;
         private System.Windows.Forms.ToolStripMenuItem openosmToolStripMenuItem;
-        private System.Windows.Forms.TrackBar scaleSlider;
         private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem1;
         private System.Windows.Forms.ToolStripMenuItem slimToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem splitToolStripMenuItem;
