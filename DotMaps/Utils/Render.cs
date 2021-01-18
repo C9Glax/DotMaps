@@ -29,7 +29,7 @@ namespace DotMaps.Utils
                     for (; startNodeIndex < maxNodeIndex && startNodeIndex < nodes.Length; startNodeIndex++)
                     {
                         Graph.GraphNode node = nodes[startNodeIndex];
-                        if (Functions.DistanceBetweenNodes(renderCenter, node) < (renderHeight < renderWidth ? renderHeight : renderWidth) / 800 * scale)
+                        if (Functions.DistanceBetweenNodes(renderCenter, node) * scale < (renderHeight > renderWidth ? renderHeight : renderWidth))
                         {
                             foreach (Graph.Connection connection in node.GetConnections())
                             {
