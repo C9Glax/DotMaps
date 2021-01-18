@@ -1,17 +1,33 @@
 ﻿using System;
 using System.IO;
-using System.Threading;
 
-namespace DotMaps.Converter
+namespace DotMaps
 {
-    public class Converter
+    public partial class Converter
     {
-        public static void Main(string[] args)
-        {
-            new Converter();
-        }
 
-        public Converter()
+        public enum ConvertType { SLIM, SPLIT, BOTH }
+        private ConvertType operation;
+        private string path, newPath;
+
+        /*
+        * Event Handler
+        */
+        public event StatusEventHandler OnStatusChange;
+        public class StatusChangedEventArgs : EventArgs
+        {
+            public string status;
+        }
+        public delegate void StatusEventHandler(object sender, StatusChangedEventArgs e);
+
+        public event ProgressEventHandler OnProgress;
+        public class ProgressEventArgs : EventArgs
+        {
+            public float progress;
+        }
+        public delegate void ProgressEventHandler(object sender, ProgressEventArgs e);
+
+        public static void Main(string[] args)
         {
             Console.WriteLine("S[l]im, S[p]lit or [B]oth?");
             char choice = Console.ReadKey().KeyChar;
@@ -19,42 +35,61 @@ namespace DotMaps.Converter
             string path = Console.ReadLine();
             Console.WriteLine("Path to save _convert.osm (e.g. E:\\Desktop\\xxx.osm)");
             string newPath = Console.ReadLine();
-            Thread statusPrinterThread = new Thread(StatusThread);
-            statusPrinterThread.Start(this);
-
+            Converter converter;
             switch (choice)
             {
                 case 'l':
-                    new Slimmer().SlimOSMFormat(path, newPath);
+                    converter = new Converter(ConvertType.SLIM, path, newPath);
                     break;
                 case 'p':
-                    new Splitter().SplitWays(path, newPath);
+                    converter = new Converter(ConvertType.SPLIT, path, newPath);
                     break;
                 case 'b':
-                    new Slimmer().SlimOSMFormat(path, newPath + ".temp");
-                    new Splitter().SplitWays(newPath + ".temp", newPath);
-                    File.Delete(newPath + ".temp");
+                    converter = new Converter(ConvertType.BOTH, path, newPath);
                     break;
                 default:
                     Console.WriteLine("Invalid option '{0}'. Exiting", choice);
-                    Environment.Exit(0);
-                    break;
+                    Environment.Exit(-1);
+                    return;
             }
-            statusPrinterThread.Abort();
-
+            converter.OnProgress += (s, e) =>
+            {
+                string progressString = string.Format("{0:#0.00}%", e.progress);
+                int consoleLeft = Console.CursorLeft, consoleTop = Console.CursorTop;
+                Console.SetCursorPosition(Console.WindowWidth - progressString.Length, consoleTop);
+                Console.WriteLine(progressString);
+                Console.SetCursorPosition(consoleLeft, consoleTop);
+            };
+            converter.OnStatusChange += (s, e) =>
+            {
+                Console.WriteLine(e.status);
+            };
+            converter.Start();
         }
 
-        public string status = "";
 
-        public static void StatusThread(object parent)
+        public Converter(ConvertType operation, string path, string newPath)
         {
-            int line;
-            while (Thread.CurrentThread.ThreadState != ThreadState.AbortRequested)
+            this.operation = operation;
+            this.path = path;
+            this.newPath = newPath;
+        }
+
+        public void Start()
+        {
+            switch (operation)
             {
-                line = Console.CursorTop;
-                Console.WriteLine(((Converter)parent).status);
-                Console.CursorTop = line;
-                Thread.Sleep(100);
+                case ConvertType.SLIM:
+                    Slimmer.SlimOSMFormat(this, path, newPath);
+                    break;
+                case ConvertType.SPLIT:
+                    Splitter.SplitWays(this, path, newPath);
+                    break;
+                case ConvertType.BOTH:
+                    Slimmer.SlimOSMFormat(this, path, newPath + ".temp");
+                    Splitter.SplitWays(this, newPath + ".temp", newPath);
+                    File.Delete(newPath + ".temp");
+                    break;
             }
         }
     }
