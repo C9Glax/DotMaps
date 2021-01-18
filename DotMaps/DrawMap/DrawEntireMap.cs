@@ -13,6 +13,8 @@ namespace DotMaps
         static void Main(string[] args)
         {
             DrawMap();
+            Console.WriteLine("Press any key to exit...");
+            Console.ReadKey();
         }
 
 
@@ -57,7 +59,6 @@ namespace DotMaps
 
             _2DNode bottomLeft = Functions._2DNodeFrom3DNode(new _3DNode(mapGraph.minLat, mapGraph.minLon), renderCenter, scale);
             _2DNode topRight = Functions._2DNodeFrom3DNode(new _3DNode(mapGraph.maxLat, mapGraph.maxLon), renderCenter, scale);
-            Console.WriteLine("Bottomleft: {0}, {1}\t\tTopright: {2}, {3}", bottomLeft.X, bottomLeft.Y, topRight.X, topRight.Y);
             int width = (int)(topRight.X - bottomLeft.X);
             int height = (int)(bottomLeft.Y - topRight.Y);
 
