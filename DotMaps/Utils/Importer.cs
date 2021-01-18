@@ -32,7 +32,6 @@ namespace DotMaps.Utils
         {
             Graph retGraph = new Graph();
 
-
             this.OnProgress?.Invoke(this, new ProgressEventArgs
             {
                 progress = 0

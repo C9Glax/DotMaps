@@ -38,11 +38,15 @@ namespace DotMaps
             this.memoryUsageLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.openosmToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.saveRenderToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.openToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.slimToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.splitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.statusStrip.SuspendLayout();
             this.menuStrip1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.SuspendLayout();
             // 
             // statusStrip
@@ -111,10 +115,26 @@ namespace DotMaps
             // 
             // openosmToolStripMenuItem
             // 
+            this.openosmToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.saveRenderToolStripMenuItem,
+            this.openToolStripMenuItem});
             this.openosmToolStripMenuItem.Name = "openosmToolStripMenuItem";
-            this.openosmToolStripMenuItem.Size = new System.Drawing.Size(80, 20);
-            this.openosmToolStripMenuItem.Text = "Open .osm ";
-            this.openosmToolStripMenuItem.Click += new System.EventHandler(this.openosmToolStripMenuItem_Click);
+            this.openosmToolStripMenuItem.Size = new System.Drawing.Size(43, 20);
+            this.openosmToolStripMenuItem.Text = "Map";
+            // 
+            // saveRenderToolStripMenuItem
+            // 
+            this.saveRenderToolStripMenuItem.Name = "saveRenderToolStripMenuItem";
+            this.saveRenderToolStripMenuItem.Size = new System.Drawing.Size(135, 22);
+            this.saveRenderToolStripMenuItem.Text = "Save render";
+            this.saveRenderToolStripMenuItem.Click += new System.EventHandler(this.saveRenderToolStripMenuItem_Click);
+            // 
+            // openToolStripMenuItem
+            // 
+            this.openToolStripMenuItem.Name = "openToolStripMenuItem";
+            this.openToolStripMenuItem.Size = new System.Drawing.Size(135, 22);
+            this.openToolStripMenuItem.Text = "Open";
+            this.openToolStripMenuItem.Click += new System.EventHandler(this.openToolStripMenuItem_Click);
             // 
             // toolStripMenuItem1
             // 
@@ -139,25 +159,33 @@ namespace DotMaps
             this.splitToolStripMenuItem.Text = "Split";
             this.splitToolStripMenuItem.Click += new System.EventHandler(this.splitToolStripMenuItem_Click);
             // 
+            // pictureBox1
+            // 
+            this.pictureBox1.BackColor = System.Drawing.Color.Black;
+            this.pictureBox1.Location = new System.Drawing.Point(343, 204);
+            this.pictureBox1.Name = "pictureBox1";
+            this.pictureBox1.Size = new System.Drawing.Size(100, 50);
+            this.pictureBox1.TabIndex = 4;
+            this.pictureBox1.TabStop = false;
+            // 
             // MapDisplay
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.BackColor = System.Drawing.Color.Black;
+            this.BackColor = System.Drawing.SystemColors.Control;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.pictureBox1);
             this.Controls.Add(this.statusStrip);
             this.Controls.Add(this.menuStrip1);
             this.MainMenuStrip = this.menuStrip1;
             this.Name = "MapDisplay";
             this.Text = "TileDisplay";
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.TileDisplay_FormClosed);
-            this.MouseDown += new System.Windows.Forms.MouseEventHandler(this.TileDisplay_MouseDown);
-            this.MouseMove += new System.Windows.Forms.MouseEventHandler(this.TileDisplay_MouseMove);
-            this.MouseUp += new System.Windows.Forms.MouseEventHandler(this.TileDisplay_MouseUp);
             this.statusStrip.ResumeLayout(false);
             this.statusStrip.PerformLayout();
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -177,6 +205,9 @@ namespace DotMaps
         private System.Windows.Forms.ToolStripMenuItem splitToolStripMenuItem;
         private System.Windows.Forms.ToolStripProgressBar memoryUsageBar;
         private System.Windows.Forms.ToolStripStatusLabel memoryUsageLabel;
+        private System.Windows.Forms.ToolStripMenuItem saveRenderToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem openToolStripMenuItem;
+        private System.Windows.Forms.PictureBox pictureBox1;
     }
 }
 
