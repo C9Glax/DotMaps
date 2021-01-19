@@ -15,3 +15,5 @@ living_street,20
 service,5
 pedestrian,1
 road,50
+none,130
+walk,5
