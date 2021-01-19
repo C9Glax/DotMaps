@@ -112,7 +112,7 @@ namespace DotMaps.Utils
                                     }
                                     catch (FormatException)
                                     {
-                                        Console.WriteLine("Maxspeed {0} not implemented", currentWay.tags["maxspeed"]);
+                                        Console.WriteLine("Maxspeed '{0}' not implemented", currentWay.tags["maxspeed"]);
                                     }
                                 else if (speeds.ContainsKey(currentWay.tags["highway"]))
                                     speed = (int)speeds[currentWay.tags["highway"]];
