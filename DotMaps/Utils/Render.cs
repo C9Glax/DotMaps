@@ -18,6 +18,7 @@ namespace DotMaps.Utils
 
             ConcurrentQueue<Line> draw = new ConcurrentQueue<Line>();
             Bitmap render = new Bitmap(renderWidth, renderHeight);
+            Vector cameraVector = Functions.GetCameraVector(renderCenter, scale);
 
             Console.WriteLine("Drawing Map...");
             for (int thread = 0; thread < threads; thread++)
@@ -35,16 +36,20 @@ namespace DotMaps.Utils
                             {
                                 Pen pen = pens[connection.roadType] == null ? (Pen)pens["default"] : (Pen)pens[connection.roadType];
 
-                                _2DNode _2dfrom = Functions._2DNodeFromGraphNode(node, renderCenter, scale);
+                                _2DNode _2dfrom = Functions._2DNodeFromGraphNodeAndVector(node, renderCenter, cameraVector);
                                 _2DNode _2dto;
                                 foreach (_3DNode coord in connection.coordinates)
                                 {
-                                    _2dto = Functions._2DNodeFrom3DNode(coord, renderCenter, scale);
-                                    draw.Enqueue(new Line(pen, _2dfrom, _2dto));
+                                    _2dto = Functions._2DNodeFrom3DNodeAndCameraVector(coord, renderCenter, cameraVector);
+                                    draw.Enqueue(new Line(pen,
+                                        new _2DNode(_2dfrom.X + (renderWidth / 2), _2dfrom.Y + (renderHeight / 2)),
+                                        new _2DNode(_2dto.X + (renderWidth / 2), _2dto.Y + (renderHeight / 2))));
                                     _2dfrom = _2dto;
                                 }
-                                _2dto = Functions._2DNodeFromGraphNode(connection.neighbor, renderCenter, scale);
-                                draw.Enqueue(new Line(pen, _2dfrom, _2dto));
+                                _2dto = Functions._2DNodeFromGraphNodeAndVector(connection.neighbor, renderCenter, cameraVector);
+                                draw.Enqueue(new Line(pen,
+                                        new _2DNode(_2dfrom.X + (renderWidth / 2), _2dfrom.Y + (renderHeight / 2)),
+                                        new _2DNode(_2dto.X + (renderWidth / 2), _2dto.Y + (renderHeight / 2))));
                             }
                             renderedNodes++;
                         }
@@ -62,9 +67,10 @@ namespace DotMaps.Utils
                     {
                         Line line;
                         while (!draw.TryDequeue(out line)) ;
-                        g.FillEllipse(new SolidBrush(line.pen.Color), (line.from.X - line.pen.Width / 2) + (renderWidth / 2), (line.from.Y - line.pen.Width / 2) + (renderHeight / 2), line.pen.Width, line.pen.Width);
-                        g.DrawLine(line.pen, line.from.X + (renderWidth / 2), line.from.Y + (renderHeight / 2), line.to.X + (renderWidth / 2), line.to.Y + (renderHeight / 2));
-                        g.FillEllipse(new SolidBrush(line.pen.Color), (line.to.X - line.pen.Width / 2) + (renderWidth / 2), (line.to.Y - line.pen.Width / 2) + (renderHeight / 2), line.pen.Width, line.pen.Width);
+                        float halfPenWidth = line.pen.Width / 2;
+                        g.FillEllipse(new SolidBrush(line.pen.Color), line.from.X - halfPenWidth, line.from.Y - halfPenWidth, line.pen.Width, line.pen.Width);
+                        g.DrawLine(line.pen, line.from.X, line.from.Y, line.to.X, line.to.Y);
+                        g.FillEllipse(new SolidBrush(line.pen.Color), line.to.X - halfPenWidth, line.to.Y - halfPenWidth, line.pen.Width, line.pen.Width);
                     }
                 }
                 Console.WriteLine(string.Format("Done :) Total/Rendered Nodes: {0}/{1}", nodes.Length, renderedNodes));

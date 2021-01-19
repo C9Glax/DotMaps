@@ -46,7 +46,7 @@ namespace DotMaps.Utils
         }
         public static double RadiansToDegrees(double rad)
         {
-            return (rad * 180.0 / Math.PI) % 360.0;
+            return rad * 180.0 / Math.PI;
         }
 
         public static double AngleBetweenNodes(_3DNode node1, _3DNode node2)
@@ -68,46 +68,65 @@ namespace DotMaps.Utils
             return angle;
         }
 
-        public static _2DNode _2DNodeFromGraphNode(Graph.GraphNode node, _3DNode center, int scale)
+        public static _2DNode _2DNodeFromGraphNode(Graph.GraphNode node, _3DNode cameraCenter, int scale)
         {
-            return _2DNodeFrom3DNode(new _3DNode(node.position.lat, node.position.lon), center, scale);
+            return _2DNodeFrom3DNode(new _3DNode(node.position.lat, node.position.lon), cameraCenter, scale);
+        }
+
+        public static _2DNode _2DNodeFromGraphNodeAndVector(Graph.GraphNode node, _3DNode cameraCenter, Vector cameraCenterVector)
+        {
+            return _2DNodeFrom3DNodeAndCameraVector(new _3DNode(node.position.lat, node.position.lon), cameraCenter, cameraCenterVector);
         }
 
         public static _2DNode _2DNodeFrom3DNode(_3DNode node, _3DNode cameraCenter, int scale)
         {
+            return _2DNodeFrom3DNodeAndCameraVector(node, cameraCenter, GetCameraVector(cameraCenter, scale));
+        }
 
+        public static _2DNode _2DNodeFrom3DNodeAndCameraVector(_3DNode node, _3DNode cameraCenter, Vector cameraCenterVector)
+        {
+            double radNodeLon = DegreesToRadians(node.lon);
+            double radNodeLat = DegreesToRadians(node.lat);
+            double cosRadNodeLat = Math.Cos(radNodeLat);
             //Vector to node
             Vector nodeVector = new Vector(
-                Math.Cos(DegreesToRadians(node.lon)) * Math.Cos(DegreesToRadians(node.lat)),
-                Math.Sin(DegreesToRadians(node.lat)),
-                Math.Sin(DegreesToRadians(node.lon)) * Math.Cos(DegreesToRadians(node.lat)));
+                Math.Cos(radNodeLon) * cosRadNodeLat,
+                Math.Sin(radNodeLat),
+                Math.Sin(radNodeLon) * cosRadNodeLat);
 
-            //Camera Norm-Vector
-            Vector cameraVector = new Vector(
-                Math.Cos(DegreesToRadians(cameraCenter.lon)) * Math.Cos(DegreesToRadians(cameraCenter.lat)),
-                Math.Sin(DegreesToRadians(cameraCenter.lat)),
-                Math.Sin(DegreesToRadians(cameraCenter.lon)) * Math.Cos(DegreesToRadians(cameraCenter.lat))).Scale(scale*earthRadius);
-
-            if (cameraVector.DotProductWith(nodeVector) == 0) //Node can't be projected onto plane
+            if (cameraCenterVector.DotProductWith(nodeVector) == 0) //Node can't be projected onto plane
                 Environment.Exit(-1);
 
             //Intersection between line through node and "camera"-plane
-            double intersectionfactor = (Math.Pow(cameraVector.x, 2) + Math.Pow(cameraVector.y, 2) + Math.Pow(cameraVector.z, 2)) /
-                (cameraVector.x * nodeVector.x + cameraVector.y * nodeVector.y + cameraVector.z * nodeVector.z);
-            Vector vectorFromCenter = cameraVector.Subtract(nodeVector.Scale(intersectionfactor));
+            double intersectionfactor = (Math.Pow(cameraCenterVector.x, 2) + Math.Pow(cameraCenterVector.y, 2) + Math.Pow(cameraCenterVector.z, 2)) /
+                (cameraCenterVector.x * nodeVector.x + cameraCenterVector.y * nodeVector.y + cameraCenterVector.z * nodeVector.z);
+            Vector vectorFromCenter = cameraCenterVector.Subtract(nodeVector.Scale(intersectionfactor));
 
 
-            Vector verticalVector = new Vector(Math.Sin(DegreesToRadians(cameraCenter.lon)),
+            double radCameraLon = DegreesToRadians(cameraCenter.lon);
+            Vector verticalVector = new Vector(Math.Sin(radCameraLon),
                 0,
-                -Math.Cos(DegreesToRadians(cameraCenter.lon)));
+                -Math.Cos(radCameraLon));
 
             double angle = RadiansToDegrees(verticalVector.AngleTo(vectorFromCenter));
-            double x = vectorFromCenter.length * Math.Sin(DegreesToRadians(90 - angle)) / Math.Sin(DegreesToRadians(90));
-            double y = vectorFromCenter.length * Math.Sin(DegreesToRadians(angle)) / Math.Sin(DegreesToRadians(90));
-            if (node.lat > cameraCenter.lat)
+            double x = vectorFromCenter.length * Math.Sin(DegreesToRadians(90-angle));// / Math.Sin(DegreesToRadians(90)); = 1
+            double y = vectorFromCenter.length * Math.Sin(DegreesToRadians(angle));// / Math.Sin(DegreesToRadians(90)); = 1
+            if (node.lat > cameraCenter.lat) //TODO Fix the problem along x-axis
                 y = -y;
 
             return new _2DNode((float)x, (float)y);
+        }
+
+        public static Vector GetCameraVector(_3DNode cameraCenter, int scale)
+        {
+            double radCameraLon = DegreesToRadians(cameraCenter.lon);
+            double radCameraLat = DegreesToRadians(cameraCenter.lat);
+            double cosRadCameraLat = Math.Cos(radCameraLat);
+            //Camera Norm-Vector
+            return new Vector(
+                Math.Cos(radCameraLon) * cosRadCameraLat,
+                Math.Sin(radCameraLat),
+                Math.Sin(radCameraLon) * cosRadCameraLat).Scale(scale * earthRadius);
         }
 
         /*
