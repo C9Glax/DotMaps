@@ -85,7 +85,12 @@ namespace DotMaps.Utils
             foreach (string speed in File.ReadAllLines("speeds.txt"))
                 speeds.Add(speed.Split(',')[0], Convert.ToInt32(speed.Split(',')[1]));
 
-            Way currentWay = new Way(0);
+            List<string> copykeys = new List<string>();
+            foreach (string key in File.ReadAllLines("copykeys.txt"))
+                copykeys.Add(key);
+
+            List<Graph.GraphNode> nodes = new List<Graph.GraphNode>();
+            Dictionary<string, string> tags = new Dictionary<string, string>();
 
 
             this.OnStatusChange?.Invoke(this, new StatusChangedEventArgs
@@ -102,39 +107,39 @@ namespace DotMaps.Utils
                     {
                         if (nodeType == NodeType.WAY)
                         {
-                            if (currentWay.tags.ContainsKey("highway") && currentWay.nodes.Count > 1)
+                            if (tags.ContainsKey("highway") && nodes.Count > 1)
                             {
                                 int speed = (int)speeds["default"];
-                                if (currentWay.tags.ContainsKey("maxspeed"))
+                                if (tags.ContainsKey("maxspeed"))
                                     try
                                     {
-                                        speed = Convert.ToInt32(currentWay.tags["maxspeed"]);
+                                        speed = Convert.ToInt32(tags["maxspeed"]);
                                     }
                                     catch (FormatException)
                                     {
-                                        Console.WriteLine("Maxspeed '{0}' not implemented", currentWay.tags["maxspeed"]);
+                                        Console.WriteLine("Maxspeed '{0}' not implemented", tags["maxspeed"]);
                                     }
-                                else if (speeds.ContainsKey(currentWay.tags["highway"]))
-                                    speed = (int)speeds[currentWay.tags["highway"]];
+                                else if (speeds.ContainsKey(tags["highway"]))
+                                    speed = (int)speeds[tags["highway"]];
                                 string name = "";
-                                if (currentWay.tags.ContainsKey("ref"))
-                                    name = currentWay.tags["ref"];
-                                else if (currentWay.tags.ContainsKey("name"))
-                                    name = currentWay.tags["name"]; ;
+                                if (tags.ContainsKey("ref"))
+                                    name = tags["ref"];
+                                else if (tags.ContainsKey("name"))
+                                    name = tags["name"]; ;
 
-                                Graph.GraphNode start = retGraph.GetNode(currentWay.nodes[0].id);
+                                Graph.GraphNode start = retGraph.GetNode(nodes[0].id);
                                 List<_3DNode> coords = new List<_3DNode>();
                                 double distance = 0.0;
 
-                                for (int i = 1; i < currentWay.nodes.Count - 1; i++)
+                                for (int i = 1; i < nodes.Count - 1; i++)
                                 {
-                                    if (nodeOccurances[currentWay.nodes[i].id] > 1)
+                                    if (nodeOccurances[nodes[i].id] > 1)
                                     {
-                                        Graph.GraphNode intersection = retGraph.GetNode(currentWay.nodes[i].id);
-                                        if (!currentWay.tags.ContainsKey("oneway") || (currentWay.tags["oneway"]) == "no")
-                                            start.AddConnection(new Graph.Connection(distance, (float)distance / speed, intersection, name, coords.ToArray(), currentWay.tags["highway"]));
+                                        Graph.GraphNode intersection = retGraph.GetNode(nodes[i].id);
+                                        if (!tags.ContainsKey("oneway") || tags["oneway"] == "no")
+                                            start.AddConnection(new Graph.Connection(distance, (float)distance / speed, intersection, name, coords.ToArray(), tags["highway"]));
                                         coords.Reverse();
-                                        intersection.AddConnection(new Graph.Connection(distance, (float)distance / speed, start, name, coords.ToArray(), currentWay.tags["highway"]));
+                                        intersection.AddConnection(new Graph.Connection(distance, (float)distance / speed, start, name, coords.ToArray(), tags["highway"]));
 
                                         start = intersection;
                                         distance = 0;
@@ -142,19 +147,19 @@ namespace DotMaps.Utils
                                     }
                                     else
                                     {
-                                        float lat = currentWay.nodes[i].coordinates.lat;
-                                        float lon = currentWay.nodes[i].coordinates.lon;
+                                        float lat = nodes[i].coordinates.lat;
+                                        float lon = nodes[i].coordinates.lon;
                                         distance += coords.Count > 0 ? Functions.DistanceBetweenCoordinates(coords[coords.Count - 1].lat, coords[coords.Count - 1].lon, lat, lon) : 0;
                                         coords.Add(new _3DNode(lat, lon));
-                                        retGraph.RemoveNode(currentWay.nodes[i].id);
+                                        retGraph.RemoveNode(nodes[i].id);
                                     }
                                 }
 
-                                Graph.GraphNode goal = retGraph.GetNode(currentWay.nodes[currentWay.nodes.Count - 1].id);
-                                if (!currentWay.tags.ContainsKey("oneway") || ((string)currentWay.tags["oneway"]) == "no")
-                                    start.AddConnection(new Graph.Connection(distance, (float)distance / speed, goal, name, coords.ToArray(), currentWay.tags["highway"]));
+                                Graph.GraphNode goal = retGraph.GetNode(nodes[nodes.Count - 1].id);
+                                if (!tags.ContainsKey("oneway") || tags["oneway"] == "no")
+                                    start.AddConnection(new Graph.Connection(distance, (float)distance / speed, goal, name, coords.ToArray(), tags["highway"]));
                                 coords.Reverse();
-                                goal.AddConnection(new Graph.Connection(distance, (float)distance / speed, start, name, coords.ToArray(), currentWay.tags["highway"]));
+                                goal.AddConnection(new Graph.Connection(distance, (float)distance / speed, start, name, coords.ToArray(), tags["highway"]));
                             }
                         }
                         switch (reader.Name)
@@ -164,11 +169,11 @@ namespace DotMaps.Utils
                                 break;
                             case "way":
                                 nodeType = NodeType.WAY;
-                                currentWay.nodes.Clear();
-                                currentWay.tags.Clear();
-                                currentWay.id = Convert.ToUInt32(reader.GetAttribute("id"));
+                                nodes.Clear();
+                                tags.Clear();
                                 break;
                             default:
+                                
                                 nodeType = NodeType.UNKNOWN;
                                 break;
                         }
@@ -180,16 +185,17 @@ namespace DotMaps.Utils
                             case "nd":
                                 ulong id = Convert.ToUInt64(reader.GetAttribute("ref"));
                                 if (retGraph.ContainsNode(id))
-                                    currentWay.nodes.Add(retGraph.GetNode(id));
+                                    nodes.Add(retGraph.GetNode(id));
                                 else if (allNodes.ContainsKey(id))
                                 {
                                     retGraph.AddNode((Graph.GraphNode)allNodes[id]);
                                     allNodes.Remove(id);
-                                    currentWay.nodes.Add(retGraph.GetNode(id));
+                                    nodes.Add(retGraph.GetNode(id));
                                 }
                                 break;
                             case "tag":
-                                currentWay.tags.Add(reader.GetAttribute("k"), reader.GetAttribute("v").ToString());
+                                if(copykeys.Contains(reader.GetAttribute("k")))
+                                    tags.Add(reader.GetAttribute("k"), reader.GetAttribute("v").ToString());
                                 break;
                         }
                     }
