@@ -8,29 +8,26 @@
         public string steetname { get; }
         public string housenumber { get; }
         public string country { get; }
-        public float lat { get; }
-        public float lon { get; }
-        public Address(string country, string postcode, string cityname, string streetname, string housenumber, float lat, float lon)
+        public _3DNode position { get; }
+        public Address(string country, string postcode, string cityname, string streetname, string housenumber, _3DNode position)
         {
             this.steetname = streetname;
             this.housenumber = housenumber;
             this.postcode = postcode;
             this.cityname = cityname;
             this.country = country;
-            this.lat = lat;
-            this.lon = lon;
+            this.position = position;
             this.assosciatedNode = 0;
         }
 
-        public Address(string country, string postcode, string cityname, string streetname, string housenumber, float lat, float lon, ulong node)
+        public Address(string country, string postcode, string cityname, string streetname, string housenumber, _3DNode position, ulong node)
         {
             this.steetname = streetname;
             this.housenumber = housenumber;
             this.postcode = postcode;
             this.cityname = cityname;
             this.country = country;
-            this.lat = lat;
-            this.lon = lon;
+            this.position = position;
             this.assosciatedNode = node;
         }
     }

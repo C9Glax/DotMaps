@@ -6,7 +6,10 @@ namespace DotMaps.Datastructures
     public class Graph
     {
         private Hashtable nodes { get; }
-        public float minLat, maxLat, minLon, maxLon;
+        public float minLat { get; }
+        public float maxLat { get; }
+        public float minLon { get; }
+        public float maxLon { get; }
         public Graph()
         {
             this.nodes = new Hashtable();
@@ -29,7 +32,7 @@ namespace DotMaps.Datastructures
             return (GraphNode)this.nodes[id];
         }
 
-        public bool ContainsNode(ulong id)
+        public bool ContainsNodeWithId(ulong id)
         {
             return this.nodes.ContainsKey(id);
         }
@@ -50,7 +53,7 @@ namespace DotMaps.Datastructures
 
             public _3DNode coordinates { get; }
             
-            private List<Connection> connections { get; }
+            public List<Connection> connections { get; }
 
             public GraphNode previous;
 
@@ -73,19 +76,9 @@ namespace DotMaps.Datastructures
                 this.previous = null;
                 this.weight = double.MaxValue;
             }
-
-            public void AddConnection(Connection connection)
-            {
-                this.connections.Add(connection);
-            }
-
-            public Connection[] GetConnections()
-            {
-                return this.connections.ToArray();
-            }
         }
 
-        public struct Connection
+        public class Connection
         {
             public double distance { get; }
             public float timeNeeded { get; }

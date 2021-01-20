@@ -59,7 +59,7 @@ namespace DotMaps.Utils
                         Graph.GraphNode node = nodes[startNodeIndex];
                         if (Functions.DistanceBetweenNodes(cameraCenter, node) * scale < (renderHeight > renderWidth ? renderHeight : renderWidth))
                         {
-                            foreach (Graph.Connection connection in node.GetConnections())
+                            foreach (Graph.Connection connection in node.connections)
                             {
                                 Pen pen = pens[connection.roadType] == null ? (Pen)pens["default"] : (Pen)pens[connection.roadType];
 
