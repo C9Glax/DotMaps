@@ -5,10 +5,10 @@ namespace DotMaps.Datastructures
     public class Graph
     {
         private Dictionary<ulong, GraphNode> nodes { get; }
-        public float minLat { get; }
-        public float maxLat { get; }
-        public float minLon { get; }
-        public float maxLon { get; }
+        public float minLat { get; set; }
+        public float maxLat { get; set; }
+        public float minLon { get; set; }
+        public float maxLon { get; set; }
         public Graph()
         {
             this.nodes = new Dictionary<ulong, GraphNode>();
@@ -26,7 +26,7 @@ namespace DotMaps.Datastructures
             return ret;
         }
 
-        public GraphNode GetNode(idinteger id)
+        public GraphNode GetNode(ulong id)
         {
             if (!this.ContainsNode(id))
                 throw new System.ArgumentOutOfRangeException("Node not in Graph.");

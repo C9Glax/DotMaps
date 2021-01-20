@@ -4,7 +4,6 @@ using DotMaps.Datastructures;
 using System.Xml;
 using System.Collections.Generic;
 using System.IO;
-using DotMaps.Datatypes;
 
 namespace DotMaps.Utils
 {
@@ -58,7 +57,7 @@ namespace DotMaps.Utils
                         switch (reader.Name)
                         {
                             case "node":
-                                idinteger id = idinteger.Parse(reader.GetAttribute("id"));
+                                ulong id = Convert.ToUInt64(reader.GetAttribute("id"));
                                 float lat = Convert.ToSingle(reader.GetAttribute("lat").Replace(".", ","));
                                 float lon = Convert.ToSingle(reader.GetAttribute("lon").Replace(".", ","));
                                 allNodes.Add(id, new Graph.GraphNode(id, lat, lon));
@@ -184,8 +183,8 @@ namespace DotMaps.Utils
                         switch (reader.Name)
                         {
                             case "nd":
-                                idinteger id = idinteger.Parse(reader.GetAttribute("ref"));
-                                if (retGraph.ContainsNodeWithId(id))
+                                ulong id = Convert.ToUInt64(reader.GetAttribute("ref"));
+                                if (retGraph.ContainsNode(id))
                                     nodes.Add(retGraph.GetNode(id));
                                 else if (allNodes.ContainsKey(id))
                                 {
