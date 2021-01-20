@@ -91,7 +91,7 @@ namespace DotMaps.Tiles
             using (XmlReader reader = XmlReader.Create(path, settings))
             {
                 List<ulong> currentNodes = new List<ulong>();
-                Way currentWay = new Way(0);
+                Dictionary<string, string> currentTags = new Dictionary<string, string>();
                 while (reader.Read())
                 {
                     if (reader.NodeType != XmlNodeType.EndElement)
@@ -101,9 +101,9 @@ namespace DotMaps.Tiles
                             if (state == READINGNODES && nodeType == WAY)
                             {
                                 state = NODEREAD;
-                                if (currentWay.tags.ContainsKey("highway"))
+                                if (currentTags.ContainsKey("highway"))
                                 {
-                                    Pen pen = (Pen)pens[(string)currentWay.tags["highway"]];
+                                    Pen pen = (Pen)pens[(string)currentTags["highway"]];
                                     if(pen == null)
                                         pen = (Pen)pens["default"];
                                     for (int i = 1; i < currentNodes.Count; i++)
@@ -122,11 +122,11 @@ namespace DotMaps.Tiles
                                                     grid[x, y].Add(new Line(pen, _2dfrom, _2dto));
                                     }
                                 }
-                                /*else if (currentWay.tags.ContainsKey("addr:housenumber") && !neededNodesIds.Contains(currentNodes[0]))
+                                /*else if (tags.ContainsKey("addr:housenumber") && !neededNodesIds.Contains(currentNodes[0]))
                                 {
                                     //Addresses?
                                 }*/
-                                /*foreach (string key in currentWay.tags.Keys)
+                                /*foreach (string key in tags.Keys)
                                 {
                                     //Streetnames?
                                 }*/
@@ -138,8 +138,7 @@ namespace DotMaps.Tiles
                                     break;
                                 case "way":
                                     currentNodes.Clear();
-                                    currentWay.tags.Clear();
-                                    currentWay.id = Convert.ToUInt32(reader.GetAttribute("id"));
+                                    currentTags.Clear();
                                     nodeType = WAY;
                                     break;
                                 default:
@@ -156,7 +155,7 @@ namespace DotMaps.Tiles
                                     currentNodes.Add(Convert.ToUInt64(reader.GetAttribute("ref")));
                                     break;
                                 case "tag":
-                                    currentWay.tags.Add(reader.GetAttribute("k"), reader.GetAttribute("v"));
+                                    currentTags.Add(reader.GetAttribute("k"), reader.GetAttribute("v"));
                                     break;
                             }
                         }

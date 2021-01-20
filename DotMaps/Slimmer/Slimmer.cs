@@ -53,7 +53,9 @@ namespace DotMaps
 
                 HashSet<ulong> neededNodesIds = new HashSet<ulong>();
                 List<ulong> currentNodes = new List<ulong>();
-                Way currentWay = new Way(0);
+                Dictionary<string, string> tags = new Dictionary<string, string>();
+                ulong id = 0;
+
                 int line = 0;
                 parent.OnStatusChange?.Invoke(parent, new StatusChangedEventArgs
                 {
@@ -73,8 +75,8 @@ namespace DotMaps
                             {
                                 state = NODEREAD;
                                 writer.WriteStartElement("way");
-                                writer.WriteAttributeString("id", currentWay.id.ToString());
-                                if (currentWay.tags.ContainsKey("highway"))
+                                writer.WriteAttributeString("id", id.ToString());
+                                if (tags.ContainsKey("highway"))
                                 {
                                     foreach (ulong nodeID in currentNodes)
                                     {
@@ -85,7 +87,7 @@ namespace DotMaps
                                             neededNodesIds.Add(nodeID);
                                     }
                                 }
-                                else if (currentWay.tags.ContainsKey("addr:housenumber") && !neededNodesIds.Contains(currentNodes[0]))
+                                else if (tags.ContainsKey("addr:housenumber") && !neededNodesIds.Contains(currentNodes[0]))
                                 {
                                     neededNodesIds.Add(currentNodes[0]);
 
@@ -93,11 +95,11 @@ namespace DotMaps
                                     writer.WriteAttributeString("ref", currentNodes[0].ToString());
                                     writer.WriteEndElement();
                                 }
-                                foreach (string key in currentWay.tags.Keys)
+                                foreach (string key in tags.Keys)
                                 {
                                     writer.WriteStartElement("tag");
                                     writer.WriteAttributeString("k", key);
-                                    writer.WriteAttributeString("v", Cleaner(currentWay.tags[key].ToString()));
+                                    writer.WriteAttributeString("v", Cleaner(tags[key].ToString()));
                                     writer.WriteEndElement();
                                 }
                                 writer.WriteEndElement();
@@ -109,8 +111,8 @@ namespace DotMaps
                                     break;
                                 case "way":
                                     currentNodes.Clear();
-                                    currentWay.tags.Clear();
-                                    currentWay.id = Convert.ToUInt64(reader.GetAttribute("id"));
+                                    tags.Clear();
+                                    id = Convert.ToUInt64(reader.GetAttribute("id"));
                                     nodeType = WAY;
                                     break;
                                 case "bounds":
@@ -133,13 +135,13 @@ namespace DotMaps
                             switch (reader.Name)
                             {
                                 case "nd":
-                                    ulong id = Convert.ToUInt64(reader.GetAttribute("ref"));
-                                    currentNodes.Add(id);
+                                    ulong nodeId = Convert.ToUInt64(reader.GetAttribute("ref"));
+                                    currentNodes.Add(nodeId);
                                     break;
                                 case "tag":
                                     string key = reader.GetAttribute("k");
                                     if (copykeys.Contains(key))
-                                        currentWay.tags.Add(key, reader.GetAttribute("v"));
+                                        tags.Add(key, reader.GetAttribute("v"));
                                     break;
                             }
                         }
@@ -161,13 +163,13 @@ namespace DotMaps
                     });
                     if (reader.NodeType != XmlNodeType.EndElement && reader.Depth == 1 && reader.Name == "node")
                     {
-                        ulong id = Convert.ToUInt64(reader.GetAttribute("id"));
+                        ulong nodeId = Convert.ToUInt64(reader.GetAttribute("id"));
                         string lat = reader.GetAttribute("lat");
                         string lon = reader.GetAttribute("lon");
-                        if (neededNodesIds.Contains(id))
+                        if (neededNodesIds.Contains(nodeId))
                         {
                             writer.WriteStartElement("node");
-                            writer.WriteAttributeString("id", id.ToString());
+                            writer.WriteAttributeString("id", nodeId.ToString());
                             writer.WriteAttributeString("lat", lat);
                             writer.WriteAttributeString("lon", lon);
                             writer.WriteEndElement();

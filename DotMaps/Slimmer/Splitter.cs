@@ -62,7 +62,9 @@ namespace DotMaps
                     status = "Counting occurances of nodes..."
                 });
                 int line = 0;
-                Way currentWay = new Way(0);
+                Dictionary<string, string> tags = new Dictionary<string, string>();
+                ulong id = 0;
+                byte part = 0;
                 reader.MoveToContent();
                 while (reader.Read())
                 {
@@ -77,7 +79,7 @@ namespace DotMaps
                             if (state == READINGNODES && nodeType == WAY)
                             {
                                 state = NODEREAD;
-                                if (currentWay.tags.ContainsKey("highway"))
+                                if (tags.ContainsKey("highway"))
                                     foreach (ulong nodeID in currentNodes)
                                         if (!nodeOccurances.ContainsKey(nodeID))
                                             nodeOccurances.Add(nodeID, 1);
@@ -88,11 +90,11 @@ namespace DotMaps
                             {
                                 case "node":
                                     nodeType = NODE;
-                                    ulong id = Convert.ToUInt64(reader.GetAttribute("id"));
+                                    ulong nodeId = Convert.ToUInt64(reader.GetAttribute("id"));
                                     string lat = reader.GetAttribute("lat");
                                     string lon = reader.GetAttribute("lon");
                                     writer.WriteStartElement("node");
-                                    writer.WriteAttributeString("id", id.ToString());
+                                    writer.WriteAttributeString("id", nodeId.ToString());
                                     writer.WriteAttributeString("lat", lat);
                                     writer.WriteAttributeString("lon", lon);
                                     writer.WriteEndElement();
@@ -100,8 +102,8 @@ namespace DotMaps
                                 case "way":
                                     nodeType = WAY;
                                     currentNodes.Clear();
-                                    currentWay.tags.Clear();
-                                    currentWay.id = Convert.ToUInt32(reader.GetAttribute("id"));
+                                    tags.Clear();
+                                    nodeId = Convert.ToUInt32(reader.GetAttribute("id"));
                                     break;
                                 case "bounds":
                                     nodeType = UNKNOWN;
@@ -123,13 +125,13 @@ namespace DotMaps
                             switch (reader.Name)
                             {
                                 case "nd":
-                                    ulong id = Convert.ToUInt64(reader.GetAttribute("ref"));
-                                    currentNodes.Add(id);
+                                    ulong nodeId = Convert.ToUInt64(reader.GetAttribute("ref"));
+                                    currentNodes.Add(nodeId);
                                     break;
                                 case "tag":
                                     string key = reader.GetAttribute("k");
                                     if (copykeys.Contains(key))
-                                        currentWay.tags.Add(key, reader.GetAttribute("v").ToString());
+                                        tags.Add(key, reader.GetAttribute("v").ToString());
                                     break;
                             }
                         }
@@ -155,14 +157,14 @@ namespace DotMaps
                         if (state == READINGNODES && nodeType == WAY)
                         {
                             state = NODEREAD;
-                            if (currentWay.tags.ContainsKey("highway"))
+                            if (tags.ContainsKey("highway"))
                             {
-                                currentWay.part = 0;
+                                part = 0;
 
                                 writer.WriteStartElement("way");
-                                writer.WriteAttributeString("id", currentWay.id.ToString());
-                                writer.WriteAttributeString("part", currentWay.part.ToString());
-                                foreach (KeyValuePair<string, string> tag in currentWay.tags)
+                                writer.WriteAttributeString("id", id.ToString());
+                                writer.WriteAttributeString("part", part.ToString());
+                                foreach (KeyValuePair<string, string> tag in tags)
                                 {
                                     writer.WriteStartElement("tag");
                                     writer.WriteAttributeString("k", tag.Key);
@@ -179,12 +181,12 @@ namespace DotMaps
                                         writer.WriteEndElement();
                                         writer.WriteEndElement();
 
-                                        currentWay.part++;
+                                        part++;
 
                                         writer.WriteStartElement("way");
-                                        writer.WriteAttributeString("id", currentWay.id.ToString());
-                                        writer.WriteAttributeString("part", currentWay.part.ToString());
-                                        foreach (KeyValuePair<string, string> tag in currentWay.tags)
+                                        writer.WriteAttributeString("id", id.ToString());
+                                        writer.WriteAttributeString("part", part.ToString());
+                                        foreach (KeyValuePair<string, string> tag in tags)
                                         {
                                             writer.WriteStartElement("tag");
                                             writer.WriteAttributeString("k", tag.Key);
@@ -214,8 +216,8 @@ namespace DotMaps
                             case "way":
                                 nodeType = WAY;
                                 currentNodes.Clear();
-                                currentWay.tags.Clear();
-                                currentWay.id = Convert.ToUInt32(reader.GetAttribute("id"));
+                                tags.Clear();
+                                id = Convert.ToUInt32(reader.GetAttribute("id"));
                                 break;
                             default:
                                 nodeType = UNKNOWN;
@@ -228,13 +230,13 @@ namespace DotMaps
                         switch (reader.Name)
                         {
                             case "nd":
-                                ulong id = Convert.ToUInt64(reader.GetAttribute("ref"));
-                                currentNodes.Add(id);
+                                ulong nodeId = Convert.ToUInt64(reader.GetAttribute("ref"));
+                                currentNodes.Add(nodeId);
                                 break;
                             case "tag":
                                 string key = reader.GetAttribute("k");
                                 if (copykeys.Contains(key))
-                                    currentWay.tags.Add(key, reader.GetAttribute("v").ToString());
+                                    tags.Add(key, reader.GetAttribute("v").ToString());
                                 break;
                         }
                     }
