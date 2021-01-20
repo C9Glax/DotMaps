@@ -7,13 +7,16 @@ namespace DotMaps.Datastructures
         public double x { get; }
         public double y { get; }
         public double z { get; }
-        public double length { get; }
         public Vector(double x, double y, double z)
         {
             this.x = x;
             this.y = y;
             this.z = z;
-            this.length = Math.Sqrt(x * x + y * y + z * z);
+        }
+
+        public double GetLength()
+        {
+            return Math.Sqrt(x * x + y * y + z * z);
         }
 
         public Vector MultiplyWith(Vector secondVector)
@@ -23,7 +26,7 @@ namespace DotMaps.Datastructures
 
         public double AngleTo(Vector secondVector)
         {
-            return Math.Acos(this.DotProductWith(secondVector) / (this.length * secondVector.length));
+            return Math.Acos(this.DotProductWith(secondVector) / (this.GetLength() * secondVector.GetLength()));
         }
 
         public double DotProductWith(Vector secondVector)
@@ -57,6 +60,11 @@ namespace DotMaps.Datastructures
             return new Vector(this.x - secondVector.x,
                 this.y - secondVector.y,
                 this.z - secondVector.z);
+        }
+
+        public override string ToString()
+        {
+            return string.Format("Vector < {0} {1} {2} >", this.x, this.y, this.z);
         }
     }
 }
