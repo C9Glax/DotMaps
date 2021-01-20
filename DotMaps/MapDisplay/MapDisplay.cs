@@ -30,6 +30,7 @@ namespace DotMaps
         private Graph mapGraph;
         private _3DNode renderCenter;
         private Hashtable pens;
+        private Utils.Renderer renderer;
 
         public MapDisplay()
         {

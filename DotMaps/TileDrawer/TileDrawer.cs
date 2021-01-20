@@ -60,8 +60,9 @@ namespace DotMaps.Tiles
             float latDiff = maxLat - minLat;
             float lonDiff = maxLon - minLon;
             _3DNode center = new _3DNode(minLat + latDiff / 2, minLon + lonDiff / 2);
-            _2DNode topLeft = Functions._2DNodeFrom3DNode(new _3DNode(maxLat, minLon), center, scale);
-            _2DNode bottomRight = Functions._2DNodeFrom3DNode(new _3DNode(minLat, maxLon), center, scale);
+            Renderer renderer = new Renderer(center, scale);
+            _2DNode topLeft = renderer.GetCoordinatesFromCenter(new _3DNode(maxLat, minLon));
+            _2DNode bottomRight = renderer.GetCoordinatesFromCenter(new _3DNode(minLat, maxLon));
             float xOffset = -topLeft.X;
             float yOffset = -topLeft.Y;
             double width = bottomRight.X + xOffset;
@@ -107,10 +108,8 @@ namespace DotMaps.Tiles
                                         pen = (Pen)pens["default"];
                                     for (int i = 1; i < currentNodes.Count; i++)
                                     {
-                                        _3DNode _3dfrom = (_3DNode)nodes[currentNodes[i - 1]];
-                                        _3DNode _3dto = (_3DNode)nodes[currentNodes[i]];
-                                        _2DNode _2dfrom = Functions._2DNodeFrom3DNode(_3dfrom, center, scale);
-                                        _2DNode _2dto = Functions._2DNodeFrom3DNode(_3dto, center, scale);
+                                        _2DNode _2dfrom = renderer.GetCoordinatesFromCenter((_3DNode)nodes[currentNodes[i - 1]]);
+                                        _2DNode _2dto = renderer.GetCoordinatesFromCenter((_3DNode)nodes[currentNodes[i]]);
                                         //Console.WriteLine("FROM X  {0:0000000.00} + {1:0000000.00} => {2:0000000.00}\t\tY  {3:0000000.00} + {4:0000000.00} => {5:0000000.00}", _2dfrom.X, xOffset, _2dfrom.X + xOffset, _2dfrom.Y, yOffset, _2dfrom.Y + yOffset);
                                         //Console.WriteLine("TO   X  {0:0000000.00} + {1:0000000.00} => {2:0000000.00}\t\tY  {3:0000000.00} + {4:0000000.00} => {5:0000000.00}", _2dto.X, xOffset, _2dto.X + xOffset, _2dto.Y, yOffset, _2dto.Y + yOffset);
                                         int minX = _2dfrom.X < _2dto.X ? (int)Math.Floor((_2dfrom.X + xOffset) / tileSize) : (int)Math.Floor((_2dto.X + xOffset) / tileSize);

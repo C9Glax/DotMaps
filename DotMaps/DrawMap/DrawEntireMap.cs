@@ -12,6 +12,10 @@ namespace DotMaps
     {
         static void Main(string[] args)
         {
+            /*Renderer renderer = new Renderer(new _3DNode(0, 0), 200);
+            _2DNode pp = renderer.GetCoordinatesFromCenter(new _3DNode(1, 1));
+            Console.WriteLine("<{0} ,\t {1}>", pp.X, pp.Y);
+            Console.ReadKey();*/
             DrawMap();
         }
 
@@ -55,12 +59,14 @@ namespace DotMaps
             foreach (ManagementObject result in new ManagementObjectSearcher("Select * from Win32_Processor").Get())
                 coreCount += int.Parse(result["NumberOfCores"].ToString());
 
-            _2DNode topLeft = Functions._2DNodeFrom3DNode(new _3DNode(mapGraph.maxLat, mapGraph.minLon), renderCenter, scale);
-            _2DNode bottomRight = Functions._2DNodeFrom3DNode(new _3DNode(mapGraph.minLat, mapGraph.maxLon), renderCenter, scale);
+            Renderer renderer = new Renderer(renderCenter, scale);
+
+            _2DNode topLeft = renderer.GetCoordinatesFromCenter(new _3DNode(mapGraph.maxLat, mapGraph.minLon));
+            _2DNode bottomRight = renderer.GetCoordinatesFromCenter(new _3DNode(mapGraph.minLat, mapGraph.maxLon));
             int width = (int)(bottomRight.X - topLeft.X);
             int height = (int)(bottomRight.Y - topLeft.Y);
 
-            Bitmap render = Render.DrawMap(mapGraph, renderCenter, scale, pens, width, height, coreCount);
+            Bitmap render = renderer.DrawMap(mapGraph, renderCenter, pens, width, height, coreCount);
 
             render.Save(outputFilePath);
         }

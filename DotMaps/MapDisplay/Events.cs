@@ -43,10 +43,11 @@ namespace DotMaps
                     importer.OnStatusChange += (s, s1) => { this.ChangeStatusSafe(s1.status); };
                     this.mapGraph = importer.ImportOSM(fd.FileName);
                     this.renderCenter = new _3DNode(this.mapGraph.minLat + (this.mapGraph.maxLat - this.mapGraph.minLat) / 2, this.mapGraph.minLon + (this.mapGraph.maxLon - this.mapGraph.minLon) / 2);
+                    this.renderer = new Renderer(this.renderCenter, this.scale);
                     this.ChangeLatLngSafe(string.Format("| Lat: {0} Lon: {1} |", this.renderCenter.lat, this.renderCenter.lon));
                     this.ChangeStatusSafe("Drawing Map");
                     this.isRendering = true;
-                    this.pictureBox1.Image = Render.DrawMap(this.mapGraph, this.renderCenter, this.scale, this.pens, this.Width * 3, this.Height * 3, this.coreCount);
+                    this.pictureBox1.Image = renderer.DrawMap(this.mapGraph, this.renderCenter, this.pens, this.Width * 3, this.Height * 3, this.coreCount);
                     this.isRendering = false;
 
                     this.pictureBox1.MouseDown += new MouseEventHandler(this.MapMouseDown);
@@ -64,7 +65,7 @@ namespace DotMaps
             this.scale += ticks * scalerate;
 
             if (!this.isRendering && this.scale >= minScale && this.scale <= maxScale)
-                this.pictureBox1.Image = Render.DrawMap(this.mapGraph, this.renderCenter, this.scale, this.pens, this.Width * 3, this.Height * 3, this.coreCount);
+                this.pictureBox1.Image = this.renderer.DrawMap(this.mapGraph, this.renderCenter, this.pens, this.Width * 3, this.Height * 3, this.coreCount);
 
             if (ticks < 0 && this.scale < minScale)
                 this.scale = 50;
@@ -98,7 +99,7 @@ namespace DotMaps
                 Point locationDifference = new Point(currentMapLocation.X - previousMapLocation.X, currentMapLocation.Y - previousMapLocation.Y);
                 this.renderCenter = new _3DNode(this.renderCenter.lat + (locationDifference.Y / (100f * this.scale)), this.renderCenter.lon + (-locationDifference.X / (100f * this.scale)));
                 this.latLngLabel.Text = string.Format("| Lat: {0} Lon: {1}", this.renderCenter.lat, this.renderCenter.lon);
-                this.pictureBox1.Image = Render.DrawMap(this.mapGraph, this.renderCenter, this.scale, this.pens, this.Width * 3, this.Height * 3, this.coreCount);
+                this.pictureBox1.Image = this.renderer.DrawMap(this.mapGraph, this.renderCenter, this.pens, this.Width * 3, this.Height * 3, this.coreCount);
                 this.pictureBox1.Location = new Point(-this.Width, -this.Height);
 
                 this.previousMapLocation = currentMapLocation;

@@ -142,8 +142,8 @@ namespace DotMaps.Utils
                                     }
                                     else
                                     {
-                                        float lat = currentWay.nodes[i].position.lat;
-                                        float lon = currentWay.nodes[i].position.lon;
+                                        float lat = currentWay.nodes[i].coordinates.lat;
+                                        float lon = currentWay.nodes[i].coordinates.lon;
                                         distance += coords.Count > 0 ? Functions.DistanceBetweenCoordinates(coords[coords.Count - 1].lat, coords[coords.Count - 1].lon, lat, lon) : 0;
                                         coords.Add(new _3DNode(lat, lon));
                                         retGraph.RemoveNode(currentWay.nodes[i].id);
