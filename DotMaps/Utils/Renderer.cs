@@ -11,17 +11,22 @@ namespace DotMaps.Utils
     {
         const int earthRadius = 6371;
         private Vector camera;
-        private int scale;
-        public Renderer(Vector camera, int scale)
+        private _3DNode renderCenter;
+        private int scale, threads;
+        public Renderer(Vector camera, _3DNode cameraCenter, int scale, int renderThreads)
         {
             this.camera = camera;
+            this.renderCenter = cameraCenter;
             this.scale = scale;
+            this.threads = renderThreads;
         }
 
-        public Renderer(_3DNode cameraCenter, int scale)
+        public Renderer(_3DNode cameraCenter, int scale, int renderThreads)
         {
             this.camera = Functions._3DNodeToVector(cameraCenter).Scale(scale * earthRadius);
+            this.renderCenter = cameraCenter;
             this.scale = scale;
+            this.threads = renderThreads;
         }
 
         public _2DNode GetCoordinatesFromCenter(_3DNode node)
@@ -32,12 +37,20 @@ namespace DotMaps.Utils
             double factor = (Math.Pow(camera.x, 2) + Math.Pow(camera.y, 2) + Math.Pow(camera.z, 2)) /
                 (camera.x * nodeVector.x + camera.y * nodeVector.y + camera.z * nodeVector.z);
             Vector toLocation = nodeVector.Scale(factor).Subtract(camera);
-            
 
             return new _2DNode((float)toLocation.z, -(float)toLocation.y);
         }
 
-        public Bitmap DrawMap(Graph mapGraph, _3DNode cameraCenter, Hashtable pens, int renderWidth, int renderHeight, int threads)
+        public _3DNode GetGeoCoordinatesForPosition(_2DNode position)
+        {
+            Vector toLocation = new Vector(0, position.Y, position.X);
+            Vector extendedNodeVector = this.camera.Add(toLocation);
+            Vector nodeVector = extendedNodeVector.Scale(1 / extendedNodeVector.GetLength());
+
+            return Functions.VectorTo3DNode(nodeVector);
+        }
+
+        public Bitmap DrawMap(Graph mapGraph, Hashtable pens, int renderWidth, int renderHeight)
         {
             Graph.GraphNode[] nodes = mapGraph.GetNodes();
             int nodesPerThread = (int)Math.Ceiling(nodes.Length / (double)threads);
@@ -57,7 +70,7 @@ namespace DotMaps.Utils
                     for (; startNodeIndex < maxNodeIndex && startNodeIndex < nodes.Length; startNodeIndex++)
                     {
                         Graph.GraphNode node = nodes[startNodeIndex];
-                        if (Functions.DistanceBetweenNodes(cameraCenter, node) * scale < (renderHeight > renderWidth ? renderHeight : renderWidth))
+                        if (Functions.DistanceBetweenNodes(renderCenter, node) * scale < (renderHeight > renderWidth ? renderHeight : renderWidth))
                         {
                             foreach (Graph.Connection connection in node.connections)
                             {

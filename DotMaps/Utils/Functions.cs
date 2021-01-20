@@ -80,6 +80,13 @@ namespace DotMaps.Utils
                 Math.Sin(radLon) * cosRadLat);
         }
 
+        public static _3DNode VectorTo3DNode(Vector vector)
+        {
+            float lat = (float)RadiansToDegrees(Math.Asin(vector.y));
+            float lon = (float)RadiansToDegrees(Math.Asin(vector.z / Math.Cos(Math.Asin(vector.y))));
+            return new _3DNode(lat, lon);
+        }
+
         /*
         public static _3DNode _3DNodeFrom2DNode(_2DNode node, _3DNode cameraCenter, int scale)
         {
