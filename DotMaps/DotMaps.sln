@@ -23,6 +23,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MapDisplay", "MapDisplay\Ma
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DrawEntireMap", "DrawMap\DrawEntireMap.csproj", "{4D82644D-12B6-423E-856B-08A799071860}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datatypes", "Datatypes\Datatypes.csproj", "{C108C9B4-6FA1-4B60-8E50-6818FD7DF5FD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -129,6 +131,18 @@ Global
 		{4D82644D-12B6-423E-856B-08A799071860}.Release|x64.Build.0 = Release|Any CPU
 		{4D82644D-12B6-423E-856B-08A799071860}.Release|x86.ActiveCfg = Release|Any CPU
 		{4D82644D-12B6-423E-856B-08A799071860}.Release|x86.Build.0 = Release|Any CPU
+		{C108C9B4-6FA1-4B60-8E50-6818FD7DF5FD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C108C9B4-6FA1-4B60-8E50-6818FD7DF5FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C108C9B4-6FA1-4B60-8E50-6818FD7DF5FD}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C108C9B4-6FA1-4B60-8E50-6818FD7DF5FD}.Debug|x64.Build.0 = Debug|Any CPU
+		{C108C9B4-6FA1-4B60-8E50-6818FD7DF5FD}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C108C9B4-6FA1-4B60-8E50-6818FD7DF5FD}.Debug|x86.Build.0 = Debug|Any CPU
+		{C108C9B4-6FA1-4B60-8E50-6818FD7DF5FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C108C9B4-6FA1-4B60-8E50-6818FD7DF5FD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C108C9B4-6FA1-4B60-8E50-6818FD7DF5FD}.Release|x64.ActiveCfg = Release|Any CPU
+		{C108C9B4-6FA1-4B60-8E50-6818FD7DF5FD}.Release|x64.Build.0 = Release|Any CPU
+		{C108C9B4-6FA1-4B60-8E50-6818FD7DF5FD}.Release|x86.ActiveCfg = Release|Any CPU
+		{C108C9B4-6FA1-4B60-8E50-6818FD7DF5FD}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

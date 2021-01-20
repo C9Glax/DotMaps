@@ -23,7 +23,7 @@ namespace DotMaps.Pathfinding
             Graph.GraphNode currentNode = toExplore.Peek();
             while (toExplore.Count > 0)
             {
-                foreach (Graph.Connection connection in currentNode.GetConnections())
+                foreach (Graph.Connection connection in currentNode.connections)
                 {
                     switch (pathtype)
                     {
