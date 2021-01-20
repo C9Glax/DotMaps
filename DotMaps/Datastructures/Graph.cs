@@ -1,18 +1,17 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace DotMaps.Datastructures
 {
     public class Graph
     {
-        private Hashtable nodes { get; }
+        private Dictionary<ulong, GraphNode> nodes { get; }
         public float minLat { get; }
         public float maxLat { get; }
         public float minLon { get; }
         public float maxLon { get; }
         public Graph()
         {
-            this.nodes = new Hashtable();
+            this.nodes = new Dictionary<ulong, GraphNode>();
         }
 
         public void AddNode(GraphNode node)
@@ -27,30 +26,28 @@ namespace DotMaps.Datastructures
             return ret;
         }
 
-        public GraphNode GetNode(ulong id)
+        public GraphNode GetNode(idinteger id)
         {
-            return (GraphNode)this.nodes[id];
+            if (!this.ContainsNode(id))
+                throw new System.ArgumentOutOfRangeException("Node not in Graph.");
+            return this.nodes[id];
         }
 
-        public bool ContainsNodeWithId(ulong id)
+        public bool ContainsNode(ulong id)
         {
             return this.nodes.ContainsKey(id);
         }
 
-        public int GetNumberOfNodes()
-        {
-            return this.nodes.Count;
-        }
-
         public void RemoveNode(ulong id)
         {
+            if (!this.ContainsNode(id))
+                throw new System.ArgumentOutOfRangeException("Node not in Graph.");
             this.nodes.Remove(id);
         }
 
         public class GraphNode
         {
             public ulong id { get; }
-
             public _3DNode coordinates { get; }
             
             public List<Connection> connections { get; }
@@ -68,7 +65,7 @@ namespace DotMaps.Datastructures
                 this.weight = double.MaxValue;
             }
 
-            public GraphNode(uint id, _3DNode position)
+            public GraphNode(ulong id, _3DNode position)
             {
                 this.id = id;
                 this.coordinates = position;
