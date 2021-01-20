@@ -4,6 +4,7 @@ using DotMaps.Datastructures;
 using System.Xml;
 using System.Collections.Generic;
 using System.IO;
+using DotMaps.Datatypes;
 
 namespace DotMaps.Utils
 {
@@ -57,7 +58,7 @@ namespace DotMaps.Utils
                         switch (reader.Name)
                         {
                             case "node":
-                                ulong id = Convert.ToUInt64(reader.GetAttribute("id"));
+                                idinteger id = idinteger.Parse(reader.GetAttribute("id"));
                                 float lat = Convert.ToSingle(reader.GetAttribute("lat").Replace(".", ","));
                                 float lon = Convert.ToSingle(reader.GetAttribute("lon").Replace(".", ","));
                                 allNodes.Add(id, new Graph.GraphNode(id, lat, lon));
@@ -137,9 +138,9 @@ namespace DotMaps.Utils
                                     {
                                         Graph.GraphNode intersection = retGraph.GetNode(nodes[i].id);
                                         if (!tags.ContainsKey("oneway") || tags["oneway"] == "no")
-                                            start.AddConnection(new Graph.Connection(distance, (float)distance / speed, intersection, name, coords.ToArray(), tags["highway"]));
+                                            start.connections.Add(new Graph.Connection(distance, (float)distance / speed, intersection, name, coords.ToArray(), tags["highway"]));
                                         coords.Reverse();
-                                        intersection.AddConnection(new Graph.Connection(distance, (float)distance / speed, start, name, coords.ToArray(), tags["highway"]));
+                                        intersection.connections.Add(new Graph.Connection(distance, (float)distance / speed, start, name, coords.ToArray(), tags["highway"]));
 
                                         start = intersection;
                                         distance = 0;
@@ -157,9 +158,9 @@ namespace DotMaps.Utils
 
                                 Graph.GraphNode goal = retGraph.GetNode(nodes[nodes.Count - 1].id);
                                 if (!tags.ContainsKey("oneway") || tags["oneway"] == "no")
-                                    start.AddConnection(new Graph.Connection(distance, (float)distance / speed, goal, name, coords.ToArray(), tags["highway"]));
+                                    start.connections.Add(new Graph.Connection(distance, (float)distance / speed, goal, name, coords.ToArray(), tags["highway"]));
                                 coords.Reverse();
-                                goal.AddConnection(new Graph.Connection(distance, (float)distance / speed, start, name, coords.ToArray(), tags["highway"]));
+                                goal.connections.Add(new Graph.Connection(distance, (float)distance / speed, start, name, coords.ToArray(), tags["highway"]));
                             }
                         }
                         switch (reader.Name)
@@ -183,8 +184,8 @@ namespace DotMaps.Utils
                         switch (reader.Name)
                         {
                             case "nd":
-                                ulong id = Convert.ToUInt64(reader.GetAttribute("ref"));
-                                if (retGraph.ContainsNode(id))
+                                idinteger id = idinteger.Parse(reader.GetAttribute("ref"));
+                                if (retGraph.ContainsNodeWithId(id))
                                     nodes.Add(retGraph.GetNode(id));
                                 else if (allNodes.ContainsKey(id))
                                 {
