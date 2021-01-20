@@ -1,15 +1,18 @@
-﻿using System.Collections;
+﻿using DotMaps.Datatypes;
 using System.Collections.Generic;
 
 namespace DotMaps.Datastructures
 {
     public class Graph
     {
-        private Hashtable nodes { get; }
-        public float minLat, maxLat, minLon, maxLon;
+        public Dictionary<idinteger, GraphNode> nodes { get; }
+        public float minLat { get; set; }
+        public float maxLat { get; set; }
+        public float minLon { get; set; }
+        public float maxLon { get; set; }
         public Graph()
         {
-            this.nodes = new Hashtable();
+            this.nodes = new Dictionary<idinteger, GraphNode>();
         }
 
         public void AddNode(GraphNode node)
@@ -24,39 +27,34 @@ namespace DotMaps.Datastructures
             return ret;
         }
 
-        public GraphNode GetNode(ulong id)
+        public GraphNode GetNode(idinteger id)
         {
-            return (GraphNode)this.nodes[id];
+            if (!this.ContainsNodeWithId(id))
+                throw new System.ArgumentOutOfRangeException("Node not in Graph.");
+            return this.nodes[id];
         }
 
-        public bool ContainsNode(ulong id)
+        public bool ContainsNodeWithId(idinteger id)
         {
             return this.nodes.ContainsKey(id);
         }
 
-        public int GetNumberOfNodes()
+        public void RemoveNode(idinteger id)
         {
-            return this.nodes.Count;
-        }
-
-        public void RemoveNode(ulong id)
-        {
+            if (!this.ContainsNodeWithId(id))
+                throw new System.ArgumentOutOfRangeException("Node not in Graph.");
             this.nodes.Remove(id);
         }
 
         public class GraphNode
         {
-            public ulong id { get; }
-
+            public idinteger id { get; }
             public _3DNode coordinates { get; }
-            
-            private List<Connection> connections { get; }
+            public List<Connection> connections { get; }
+            public GraphNode previous { get; set; }
+            public double weight { get; set; }
 
-            public GraphNode previous;
-
-            public double weight;
-
-            public GraphNode(ulong id, float lat, float lon)
+            public GraphNode(idinteger id, float lat, float lon)
             {
                 this.id = id;
                 this.coordinates = new _3DNode(lat, lon);
@@ -65,7 +63,7 @@ namespace DotMaps.Datastructures
                 this.weight = double.MaxValue;
             }
 
-            public GraphNode(uint id, _3DNode position)
+            public GraphNode(idinteger id, _3DNode position)
             {
                 this.id = id;
                 this.coordinates = position;
@@ -73,19 +71,9 @@ namespace DotMaps.Datastructures
                 this.previous = null;
                 this.weight = double.MaxValue;
             }
-
-            public void AddConnection(Connection connection)
-            {
-                this.connections.Add(connection);
-            }
-
-            public Connection[] GetConnections()
-            {
-                return this.connections.ToArray();
-            }
         }
 
-        public struct Connection
+        public class Connection
         {
             public double distance { get; }
             public float timeNeeded { get; }
