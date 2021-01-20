@@ -26,7 +26,7 @@ namespace DotMaps
         private int coreCount, scale;
         private Thread memoryUsageThread;
         private const int scalerate = 50, minScale = 50, maxScale = 250;
-        private Point previousMapLocation, previousMouseLocation;
+        private Point mapPrevious2DLocation, previousMouseLocation;
         private Graph mapGraph;
         private _3DNode renderCenter;
         private Hashtable pens;
@@ -38,10 +38,9 @@ namespace DotMaps
             this.pictureBox1.Location = new Point(-this.Width, -this.Height);
             this.pictureBox1.Size = new Size(this.Width * 3, this.Height * 3);
             this.pictureBox1.SendToBack();
-            this.pictureBox1.MouseWheel += new MouseEventHandler(this.scaleMouseWheel);
 
             this.scale = 100;
-            this.previousMapLocation = new Point(Cursor.Position.X - this.Location.X - 8, Cursor.Position.Y - this.Location.Y - 32);
+            this.mapPrevious2DLocation = new Point(Cursor.Position.X - this.Location.X - 8, Cursor.Position.Y - this.Location.Y - 32);
 
             foreach (ManagementObject result in new ManagementObjectSearcher(new ObjectQuery("SELECT * FROM Win32_OperatingSystem")).Get())
                 this.totalMemory = Convert.ToInt64(result["TotalVisibleMemorySize"]);
