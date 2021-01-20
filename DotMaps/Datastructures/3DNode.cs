@@ -10,5 +10,10 @@
             this.lat = lat;
             this.lon = lon;
         }
+
+        public override string ToString()
+        {
+            return string.Format("3DNode < {0} {1} >", lat, lon);
+        }
     }
 }

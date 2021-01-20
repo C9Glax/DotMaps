@@ -48,7 +48,7 @@ namespace DotMaps.Datastructures
         {
             public ulong id { get; }
 
-            public _3DNode position { get; }
+            public _3DNode coordinates { get; }
             
             private List<Connection> connections { get; }
 
@@ -59,7 +59,7 @@ namespace DotMaps.Datastructures
             public GraphNode(ulong id, float lat, float lon)
             {
                 this.id = id;
-                this.position = new _3DNode(lat, lon);
+                this.coordinates = new _3DNode(lat, lon);
                 this.connections = new List<Connection>();
                 this.previous = null;
                 this.weight = double.MaxValue;
@@ -68,7 +68,7 @@ namespace DotMaps.Datastructures
             public GraphNode(uint id, _3DNode position)
             {
                 this.id = id;
-                this.position = position;
+                this.coordinates = position;
                 this.connections = new List<Connection>();
                 this.previous = null;
                 this.weight = double.MaxValue;

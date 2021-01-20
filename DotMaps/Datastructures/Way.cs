@@ -24,5 +24,10 @@ namespace DotMaps.Datastructures
             this.nodes = new List<Graph.GraphNode>();
             this.tags = new Dictionary<string, string>();
         }
+
+        public override string ToString()
+        {
+            return string.Format("Way {0}|{1}", id, part);
+        }
     }
 }

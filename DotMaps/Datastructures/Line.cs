@@ -12,5 +12,10 @@ namespace DotMaps.Datastructures
             this.to = to;
             this.pen = pen;
         }
+
+        public override string ToString()
+        {
+            return string.Format("Line {0} to {1}", from, to);
+        }
     }
 }

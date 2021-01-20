@@ -10,5 +10,10 @@
             this.X = coordinateX;
             this.Y = coordinateY;
         }
+
+        public override string ToString()
+        {
+            return string.Format("2DNode < {0} {1} >", this.X, this.Y);
+        }
     }
 }
